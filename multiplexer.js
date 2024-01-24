@@ -12,10 +12,11 @@ export function createPacket(path, chunk) {
 }
 
 export default async function multiplexer(rootPath, destination) {
+  // TODO change this to use the generate files generator 
   const filesPath = await returnFiles(rootPath);
   const sources = createStreamSources(filesPath);
   const concurrency = 3;
-  let running = 0;
+  let running = 0; 
   const readSources = (concurrency) => {
     while (running < concurrency) {
       const currentSource = sources.shift();
