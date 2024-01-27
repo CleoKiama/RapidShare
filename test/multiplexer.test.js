@@ -11,30 +11,30 @@ const json = {
     "Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.",
   "./fileThree.txt":
     "Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.",
-  "./dirOne/fileFour.txt":
+    "./dirOne/fileFour.txt":
     "Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.",
-  "./dirOne/fileFive.txt":
+   "./dirOne/fileFive.txt":
     "Curabitur pretium tincidunt lacus. Nulla gravida orci a odio.",
-  "./dirOne/dirTwo/fileSix.txt":
+   "./dirOne/dirTwo/fileSix.txt":
     "Suspendisse pulvinar, augue ac venenatis condimentum, sem libero volutpat nibh, nec pellentesque velit pede quis nunc.",
-  "./dirOne/dirTwo/fileSeven.txt":
+   "./dirOne/dirTwo/fileSeven.txt":
     "Maecenas ullamcorper odio et justo convallis in condimentum justo facilisis.",
   "./dirOne/dirTwo/dirThree/fileEight.txt":
     "Nulla facilisi. Integer lacinia sollicitudin massa. Cras metus.",
   "./dirOne/dirTwo/dirThree/fileNine.txt":
     "Sed a libero. Vestibulum eu odio. Morbi vestibulum volutpat enim.",
-  "./dirTwo/fileTen.txt":
+    "./dirTwo/fileTen.txt":
     "Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas.",
   "./dirTwo/fileEleven.txt":
     "Mauris ut leo. Cras viverra metus rhoncus sem. Nulla et lectus vestibulum urna fringilla ultrices.",
   "./dirTwo/dirFour/fileTwelve.txt":
     "Phasellus eu tellus sit amet tortor gravida placerat. Integer sapien est, iaculis in, pretium quis, viverra ac, nunc.",
-  "./dirTwo/dirFour/fileThirteen.txt":
+ "./dirTwo/dirFour/fileThirteen.txt":
     "Praesent eget sem vel leo ultrices bibendum. Aenean faucibus.",
   "./dirTwo/dirFour/dirFive/fileFourteen.txt":
     "Nullam at arcu a est sollicitudin euismod.",
-  "./dirTwo/dirFour/dirFive/fileFifteen.txt":
-    "Vestibulum rutrum, mi nec iaculis ultricies, ligula nulla suscipit odio, at ultricies est mauris ac diam.",
+    "./dirTwo/dirFour/dirFive/fileFifteen.txt":
+    "Vestibulum rutrum, mi nec iaculis ultricies, ligula nulla suscipit odio, at ultricies est mauris ac diam.",  
 };
 
 beforeEach(() => {
@@ -99,12 +99,17 @@ test("multiplexes multiple streams", async () => {
     currentLength = null;
     currentPath = null;
   });
-  await multiplexer(pathToFiles, destination);
+  try {
+    await multiplexer(pathToFiles, destination);
+  }catch(error) {
+     console.error(error)
+  }
   await new Promise((resolve) => {
     destination.on("end", () => {
       resolve();
     });
   });
+    
    expect(pathsReturned).toBe(paths.length);
    expect(chunksReturned).toBe(paths.length); 
 });

@@ -24,7 +24,6 @@ test("createStreamSources should return an array of readable streams", async () 
   for await (const foundFiles of new GenerateFiles(pathToFiles)) {
     files.push(...foundFiles);
   }
-  console.log(files);
   expect(files).toHaveLength(dirsLength);
   const sources = createStreamSources(files);
   expect(sources[0]).toBeInstanceOf(lazystream.Readable);

@@ -1,44 +1,54 @@
-import { readdir } from "fs/promises";
-import c from "ansi-colors";
+import { readdir } from "fs-extra";
+
 export default class GenerateFiles {
-  constructor(basePath) {
+  constructor(basePath, concurrency) {
     this.path = basePath;
+    this.concurrency = concurrency;
+    this.emptyDirs = [];
     this.remainingDirs = [];
+    this.files = [];
   }
   async readDir(path) {
     const foundFiles = [];
-
     const found = await readdir(path, { withFileTypes: true });
     for (const dirent of found) {
       if (dirent.isFile()) {
         foundFiles.push(`${path}/${dirent.name}`);
       } else if (dirent.isDirectory()) {
         this.remainingDirs.push(`${path}/${dirent.name}`);
-      } else {
-        //TODO  it is just an empty directory edge case
-        console.log(c.blue("neither a file nor a directory"));
       }
     }
-
-    return foundFiles;
+    if (foundFiles.length !== 0) {
+      this.files.push(...foundFiles);
+    } else this.emptyDirs.push(path);
+  
   }
   [Symbol.asyncIterator]() {
     let currentPath = this.path;
     return {
       next: async () => {
+        
         try {
-          if (!currentPath) {
+          if (!currentPath&&this.files.length===0) {
             return { done: true };
           }
-          let files = await this.readDir(currentPath);
-          if (files.length === 0) {
-            console.log(
-              c.blue(`files length is ${files.length} for ${currentPath}`)
-            );
+           
+          if(this.files.length <= 4 && currentPath) {
+            await this.readDir(currentPath);
           }
-
+          const subset = this.files.splice(0,4)
           currentPath = this.remainingDirs.shift();
-          return { done: false, value: files };
+           if(subset.length===0 ) {
+            let emptyDir =  this.emptyDirs.shift()
+            return {
+              done: false, 
+              value : {
+                empty : true , 
+                path : emptyDir
+              }
+            }
+           } 
+           return { done: false, value : subset };
         } catch (error) {
           return console.error(
             `something went wrong reading the files and dirs ${error.message}`
@@ -48,3 +58,4 @@ export default class GenerateFiles {
     };
   }
 }
+``

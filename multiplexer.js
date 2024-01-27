@@ -1,7 +1,8 @@
 import createStreamSources from "./createFileStreams.js";
-import { returnFiles } from "./readFilesSize.js";
-
+import GenerateFiles from "./generateFiles.js";
+import c from "ansi-colors";
 export function createPacket(path, chunk) {
+  console.log(path);
   const pathBuffer = Buffer.from(path);
   const packet = Buffer.alloc(4 + 1 + pathBuffer.length + chunk.length);
   packet.writeUInt32BE(1 + pathBuffer.length + chunk.length, 0);
@@ -10,17 +11,39 @@ export function createPacket(path, chunk) {
   chunk.copy(packet, 5 + pathBuffer.length, 0, chunk.length);
   return packet;
 }
-
+//TODO whenever it is an empty array of files then it an empty dir so just send with the chunk after the path as Null
 export default async function multiplexer(rootPath, destination) {
-  // TODO change this to use the generate files generator 
-  const filesPath = await returnFiles(rootPath);
-  const sources = createStreamSources(filesPath);
-  const concurrency = 3;
-  let running = 0; 
-  const readSources = (concurrency) => {
-    while (running < concurrency) {
+  // TODO change this to use the generate files generator
+  const fileGenerator = new GenerateFiles(rootPath);
+  const iterator = fileGenerator[Symbol.asyncIterator]();
+  let iteratorResult = await iterator.next();
+  const concurrency = 4;
+  let running = 0;
+  const filesPaths = [];
+  const sources = [];
+  //TODO edge case where the initial dir could be empty thus value = []
+  const readMoreFiles = async () => {
+    if (filesPaths.length <= 4 && !iteratorResult.done) {
+      console.log(c.yellow(`reading more files`));
+      
+      filesPaths.push(...iteratorResult.value);
+      let lazyFileStreams = createStreamSources(filesPaths);
+      sources.push(...lazyFileStreams);
+      iteratorResult = await iterator.next();
+      console.log(filesPaths);
+    } else {
+      console.log(
+        c.green(
+          `not adding more files as filesPaths.length is :${filesPaths.length}`
+        )
+      );
+    }
+  };
+  const readSources = async (concurrency) => {
+    await readMoreFiles()
+    while (running < concurrency && filesPaths.length > 0) {
       const currentSource = sources.shift();
-      const currentPath = filesPath.shift();
+      const currentPath = filesPaths.shift();
       //TODO take care of the situation where we have an empty files thus chunk might be null
       currentSource.on("readable", function () {
         let chunk;
@@ -34,16 +57,15 @@ export default async function multiplexer(rootPath, destination) {
           `error reading a stream source:${currentPath} error : ${error.message}`
         );
       });
-      currentSource.on("end", () => {
+      currentSource.on("end", async () => {
         running -= 1;
-        if (sources.length > 0) {
-          readSources(concurrency);
-        } else {
-          if (destination.writable) {
-            destination.end(() => {
-              console.log("stream multiplexing ended ");
-            });
-          }
+
+        if (!iteratorResult.done) {
+         await readSources(concurrency);
+        } else if (running === 0 && destination.writable) {
+          destination.end(() => {
+            console.log(`stream multiplexing ended with running ${running}`);
+          });
         }
       });
 
@@ -51,5 +73,5 @@ export default async function multiplexer(rootPath, destination) {
     }
   };
 
-  readSources(concurrency);
+  await readSources(concurrency);
 }

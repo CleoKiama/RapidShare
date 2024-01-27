@@ -1,6 +1,5 @@
 import c from "ansi-colors";
-import fs from "fs-extra";
-
+import fs from 'fs-extra'
 async function createFS(path, buffer) {
   await fs.ensureFile(path);
   await fs.writeFile(path, buffer);
@@ -32,7 +31,8 @@ export default function Demultiplexer(source) {
         writingOperations++;
         createFS(currentPath, contentBuffer).then(() => {
           if (++writingOperations && source.readableEnded) {
-            resolve();
+            //fs.ensureDir('/app/emptyDir').then(resolve)
+             resolve();
           }
         });
       } catch (error) {
