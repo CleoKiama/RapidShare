@@ -1,7 +1,15 @@
 import createStreamSources from "./createFileStreams.js";
 import GenerateFiles from "./generateFiles.js";
-import c from "ansi-colors";
+import c from 'ansi-colors'
 export function createPacket(path, chunk) {
+  if (chunk === null) {
+    const pathBuffer = Buffer.from(path);
+    const packet = Buffer.alloc(4 + 1 + pathBuffer.length);
+    packet.writeUInt32BE(1 + pathBuffer.length, 0);
+    packet.writeUInt8(pathBuffer.length, 4);
+    pathBuffer.copy(packet, 5, 0, pathBuffer.length);
+    return packet;
+  }
   const pathBuffer = Buffer.from(path);
   const packet = Buffer.alloc(4 + 1 + pathBuffer.length + chunk.length);
   packet.writeUInt32BE(1 + pathBuffer.length + chunk.length, 0);
@@ -18,9 +26,8 @@ export default async function multiplexer(rootPath, destination) {
     let iteratorResult = await iterator.next();
     while (!iteratorResult.done) {
       if (Object.hasOwn(iteratorResult.value, "empty")) {
-        console.log(
-          c.red(`encountered an empty dir ${iteratorResult.value.path}`)
-        );
+        await sendEmptyDirPacket(iteratorResult.value.path, destination);
+        iteratorResult = await iterator.next();
         continue;
       }
       await sendPacket(iteratorResult.value, destination);
@@ -29,11 +36,19 @@ export default async function multiplexer(rootPath, destination) {
   } catch (error) {
     console.error(`error happened multiplexing  : ${error.message}`);
   }
-  if(destination.writable) {
-    destination.end()
+  if (destination.writable) {
+    console.log(c.green(`ending the destination stream`))
+     destination.end();
   }
 }
-
+const sendEmptyDirPacket = async (emptyDir, destination) => {
+  return new Promise((resolve, reject) => {
+    destination.write(createPacket(emptyDir, null), (err) => {
+      if (err) reject(err);
+      resolve();
+    });
+  });
+};
 async function sendPacket(files, destination) {
   let sources = createStreamSources(files);
   let pendingWritingOperations = 0;
@@ -45,8 +60,7 @@ async function sendPacket(files, destination) {
       currentSource.on("readable", function () {
         let chunk;
         while ((chunk = this.read()) !== null) {
-          const packet = createPacket(currentPath, chunk);
-          destination.write(packet, (err) => {
+          destination.write(createPacket(currentPath, chunk), (err) => {
             if (err) throw new Error(err.message);
             pendingWritingOperations -= 1;
           });
@@ -55,7 +69,7 @@ async function sendPacket(files, destination) {
       });
       currentSource.on("error", reject);
       currentSource.on("end", () => {
-        if (files.length === 0&&pendingWritingOperations===0) {
+        if (files.length === 0 && pendingWritingOperations === 0) {
           resolve();
         }
       });

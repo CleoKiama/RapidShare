@@ -60,7 +60,7 @@ test("handles empty directories and returns the path", async () => {
   memfs.vol.mkdirSync("/app/emptyDirOne");
   memfs.vol.mkdirSync("/app/emptyDirTwo");
   memfs.vol.mkdirSync("/app/emptyDirThree");
-  const path = "/app";
+  const path = "/app";  
   let emptyDirs = Object.keys(memfs.vol.toJSON())
    const foundEmptyDirs = []
   const generate = new GenerateFiles(path);
@@ -71,6 +71,7 @@ test("handles empty directories and returns the path", async () => {
    foundEmptyDirs.shift()
    expect(emptyDirs).toEqual(expect.arrayContaining(foundEmptyDirs))
    expect(foundEmptyDirs).toHaveLength(emptyDirs.length)
+
 }); 
 test('handles one empty Directory',async ()=>{
   memfs.vol.mkdirSync("/app");
@@ -88,7 +89,7 @@ test('handles one empty Directory',async ()=>{
     foundEmptyDir.push(dirent.path)
     expect(dirent.empty).toBe(true)
   }
-   expect(hasPropertyEmpty).toBe(true)
+  expect(hasPropertyEmpty).toBe(true)
   expect(foundEmptyDir).toHaveLength(1)
   expect(foundEmptyDir).toEqual(expect.arrayContaining(emptyDirs))
 })

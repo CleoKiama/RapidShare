@@ -1,5 +1,6 @@
 import c from "ansi-colors";
-import fs from 'fs-extra'
+import fs from "fs-extra";
+
 async function createFS(path, buffer) {
   await fs.ensureFile(path);
   await fs.writeFile(path, buffer);
@@ -25,30 +26,38 @@ export default function Demultiplexer(source) {
       }
       let pathLength = chunk.readUInt8(0);
       currentPath = chunk.toString("utf8", 1, 1 + pathLength);
-      const contentBuffer = Buffer.alloc(chunk.length - pathLength-1);
+
+      const contentBuffer = Buffer.alloc(chunk.length - pathLength - 1);
       chunk.copy(contentBuffer, 0, 1 + pathLength, chunk.length);
-      try {
         writingOperations++;
         createFS(currentPath, contentBuffer).then(() => {
-          if (++writingOperations && source.readableEnded) {
+          if (--writingOperations === 0 && source.readableEnded) {
             //fs.ensureDir('/app/emptyDir').then(resolve)
-             resolve();
+            console.log(
+              c.blue(`${writingOperations} write operations ending the demux `)
+            );
+            resolve();
+          }else if(writingOperations<=0) {
+            source.setEncoding('utf8')
+             let remainingChunk = source.read() 
+             while (remainingChunk!==null) {
+              remainingChunk = source.read()
+              console.log(`remaining chunk ${remainingChunk}`)
+             }
+            console.log(
+              c.blue(`source.readableEnded false and source.readable :  ${source.readable} but : ${writingOperations} write operations ending the demux `)
+            );
+            resolve();
           }
-        });
-      } catch (error) {
-        reject(error);
-      }
+        })
+        .catch(reject);
+     
       currentLength = null;
       currentPath = null;
     });
-
-    source.on("end", () => {
-      console.log(
-        c.blue(
-          `source reading end event now waiting for ${writingOperations} write operation to finish `
-        )
-      );
-    });
     source.on("error", reject);
+    source.on(`end`,()=>{
+      c.greenBright(`source.readableEnded true with :  ${writingOperations} write operations ending the demux `)
+    })
   });
 }
