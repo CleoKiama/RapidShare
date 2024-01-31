@@ -22,6 +22,7 @@ test("createStreamSources should return an array of readable streams", async () 
   const files = [];
   let dirsLength = Object.keys(json).length;
   for await (const foundFiles of new GenerateFiles(pathToFiles)) {
+    if(Object.hasOwn(foundFiles,'empty')) continue  
     files.push(...foundFiles);
   }
   expect(files).toHaveLength(dirsLength);

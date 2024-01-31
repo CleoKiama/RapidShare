@@ -26,8 +26,7 @@ export default class GenerateFiles {
   [Symbol.asyncIterator]() {
     let currentPath = this.path;
     return {
-      next: async () => {
-        
+      next: async () => { 
         try {
           if (!currentPath&&this.files.length===0) {
             return { done: true };

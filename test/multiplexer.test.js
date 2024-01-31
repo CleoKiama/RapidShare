@@ -7,36 +7,37 @@ import { join } from "path";
 import c from "ansi-colors";
 const json = {
   "./fileOne.txt":
-    "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
+    "The quick brown fox jumps over the lazy dog. This sentence contains every letter of the alphabet.",
   "./fileTwo.txt":
-    "Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.",
+    "A journey of a thousand miles begins with a single step.",
   "./fileThree.txt":
-    "Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.",
+    "Actions speak louder than words.",
   "./dirOne/fileFour.txt":
-    "Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.",
+    "Life is what happens when you're busy making other plans.",
   "./dirOne/fileFive.txt":
-    "Curabitur pretium tincidunt lacus. Nulla gravida orci a odio.",
+    "Every cloud has a silver lining.",
   "./dirOne/dirTwo/fileSix.txt":
-    "Suspendisse pulvinar, augue ac venenatis condimentum, sem libero volutpat nibh, nec pellentesque velit pede quis nunc.",
+    "Where there's a will, there's a way.",
   "./dirOne/dirTwo/fileSeven.txt":
-    "Maecenas ullamcorper odio et justo convallis in condimentum justo facilisis.",
+    "The only limit to our realization of tomorrow will be our doubts of today.",
   "./dirOne/dirTwo/dirThree/fileEight.txt":
-    "Nulla facilisi. Integer lacinia sollicitudin massa. Cras metus.",
+    "It always seems impossible until it's done.",
   "./dirOne/dirTwo/dirThree/fileNine.txt":
-    "Sed a libero. Vestibulum eu odio. Morbi vestibulum volutpat enim.",
+    "Don't count the days, make the days count.",
   "./dirTwo/fileTen.txt":
-    "Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas.",
+    "The only impossible journey is the one you never begin.",
   "./dirTwo/fileEleven.txt":
-    "Mauris ut leo. Cras viverra metus rhoncus sem. Nulla et lectus vestibulum urna fringilla ultrices.",
+    "Believe you can and you're halfway there.",
   "./dirTwo/dirFour/fileTwelve.txt":
-    "Phasellus eu tellus sit amet tortor gravida placerat. Integer sapien est, iaculis in, pretium quis, viverra ac, nunc.",
+    "Life is either a daring adventure or nothing at all.",
   "./dirTwo/dirFour/fileThirteen.txt":
-    "Praesent eget sem vel leo ultrices bibendum. Aenean faucibus.",
+    "You have within you right now, everything you need to deal with whatever the world can throw at you.",
   "./dirTwo/dirFour/dirFive/fileFourteen.txt":
-    "Nullam at arcu a est sollicitudin euismod.",
+    "The best way to predict the future is to create it.",
   "./dirTwo/dirFour/dirFive/fileFifteen.txt":
-    "Vestibulum rutrum, mi nec iaculis ultricies, ligula nulla suscipit odio, at ultricies est mauris ac diam.",
+    "The only limit to our realization of tomorrow will be our doubts of today.",
 };
+
 
 beforeEach(() => {
   memfs.vol.reset();

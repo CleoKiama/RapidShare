@@ -1,6 +1,5 @@
 import createStreamSources from "./createFileStreams.js";
 import GenerateFiles from "./generateFiles.js";
-import c from 'ansi-colors'
 export function createPacket(path, chunk) {
   if (chunk === null) {
     const pathBuffer = Buffer.from(path);
@@ -36,15 +35,12 @@ export default async function multiplexer(rootPath, destination) {
   } catch (error) {
     console.error(`error happened multiplexing  : ${error.message}`);
   }
-  if (destination.writable) {
-    console.log(c.green(`ending the destination stream`))
-     destination.end();
-  }
+  if (destination.writable) return destination.end();
 }
 const sendEmptyDirPacket = async (emptyDir, destination) => {
   return new Promise((resolve, reject) => {
     destination.write(createPacket(emptyDir, null), (err) => {
-      if (err) reject(err);
+      if (err) return reject(err);
       resolve();
     });
   });
@@ -69,9 +65,7 @@ async function sendPacket(files, destination) {
       });
       currentSource.on("error", reject);
       currentSource.on("end", () => {
-        if (files.length === 0 && pendingWritingOperations === 0) {
-          resolve();
-        }
+        if (files.length === 0 && pendingWritingOperations === 0) resolve();
       });
     }
   });

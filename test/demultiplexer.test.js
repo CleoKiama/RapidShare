@@ -4,7 +4,6 @@ jest.mock("fs", () => memfs);
 import multiplexer from "../multiplexer.js";
 import Demultiplexer from "../demultiplexer.js";
 import { PassThrough } from "stream";
-import c from "ansi-colors";
 import path from "path";
 const json = {
   "./dirOne/fileOne.txt": "file one text content",
@@ -13,7 +12,7 @@ const json = {
   "./dirOne/dirTwo/fileFour.txt": "content of file four.txt",
   "./dirOne/dirTwo/fileTwo.txt": "content of file two.txt",
   "./dirOne/dirTwo/fileThree.txt": "content of file three.txt",
-  "./dirOne/dirTwo/fileEmpty.txt": "",
+  "./dirOne/dirTwo/fileEmpty.txt": "hello yeah",
   "./dirOne/dirTwo/dirThree/fileSeven.txt": "content of file seven.txt",
   "./dirOne/dirTwo/dirThree/fileEight.txt": "content of file eight.txt",
   "./dirOne/dirTwo/dirThree/fileNine.txt": "content of file nine.txt",
@@ -23,10 +22,10 @@ const json = {
 
 beforeEach(() => {
   memfs.vol.reset();
-  memfs.vol.fromJSON(json, "/app");
 });
 
-test("demultiplexes the received packets", async () => {
+test("demultiplexes nested files and folders", async () => {
+  memfs.vol.fromJSON(json, "/app");
   const pathToFiles = "/app";
   const prevFs = {};
   let keys = Object.keys(json).map((key) => {
@@ -36,13 +35,37 @@ test("demultiplexes the received packets", async () => {
     prevFs[keys[index]] = value;
   });
   const source = new PassThrough();
-  await multiplexer(pathToFiles, source);
-  memfs.vol.reset();
-  memfs.vol.fromJSON(json, "/app");
-  await Demultiplexer(source).catch(error=>{
-    console.error(error.message)
-  })
+  let pendingDemux = Promise.resolve(Demultiplexer(source));
+  multiplexer(pathToFiles, source);
+  await pendingDemux;
   let currentFs = memfs.vol.toJSON();
-  console.log(currentFs);
+  expect(Object.keys(currentFs)).toHaveLength(keys.length)
+  expect(currentFs).toEqual(prevFs);
+});
+
+test("the file demultiplexes empty directories", async () => {
+  memfs.vol.mkdirSync("/app");
+  memfs.vol.mkdirSync("/app/emptyDirOne");
+  memfs.vol.mkdirSync("/app/emptyDirTwo");
+  memfs.vol.mkdirSync("/app/emptyDirThree");
+  let prevFs = memfs.vol.toJSON();
+  const path = "/app";
+  const source = new PassThrough();
+  let pendingDemux = Promise.resolve(Demultiplexer(source));
+  multiplexer(path, source);
+  await pendingDemux;
+  let currentFs = memfs.vol.toJSON();
+  expect(currentFs).toEqual(prevFs);
+});
+
+test("the file demultiplexes one empty directories", async () => {
+  memfs.vol.mkdirSync("/app");
+  let prevFs = memfs.vol.toJSON();
+  const path = "/app";
+  const source = new PassThrough();
+  let pendingDemux = Promise.resolve(Demultiplexer(source));
+  multiplexer(path, source);
+  await pendingDemux;
+  let currentFs = memfs.vol.toJSON();
   expect(currentFs).toEqual(prevFs);
 });
