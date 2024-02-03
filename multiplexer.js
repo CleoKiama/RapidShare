@@ -17,7 +17,7 @@ export function createPacket(path, chunk) {
   chunk.copy(packet, 5 + pathBuffer.length, 0, chunk.length);
   return packet;
 }
-//TODO whenever it is an empty array of files then it an empty dir so just send with the chunk after the path as Null
+
 export default async function multiplexer(rootPath, destination) {
   try {
     const fileGenerator = new GenerateFiles(rootPath);

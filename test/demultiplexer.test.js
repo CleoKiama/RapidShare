@@ -36,7 +36,7 @@ test("demultiplexes nested files and folders", async () => {
   });
   const source = new PassThrough();
   let pendingDemux = Promise.resolve(Demultiplexer(source));
-  multiplexer(pathToFiles, source);
+  multiplexer(pathToFiles,source);
   await pendingDemux;
   let currentFs = memfs.vol.toJSON();
   expect(Object.keys(currentFs)).toHaveLength(keys.length)
