@@ -4,20 +4,16 @@ jest.mock("fs", () => memfs);
 import multiplexer, { createPacket } from "../multiplexer.js";
 import { PassThrough } from "stream";
 import { join } from "path";
-import c from "ansi-colors";
+
 const json = {
   "./fileOne.txt":
     "The quick brown fox jumps over the lazy dog. This sentence contains every letter of the alphabet.",
-  "./fileTwo.txt":
-    "A journey of a thousand miles begins with a single step.",
-  "./fileThree.txt":
-    "Actions speak louder than words.",
+  "./fileTwo.txt": "A journey of a thousand miles begins with a single step.",
+  "./fileThree.txt": "Actions speak louder than words.",
   "./dirOne/fileFour.txt":
     "Life is what happens when you're busy making other plans.",
-  "./dirOne/fileFive.txt":
-    "Every cloud has a silver lining.",
-  "./dirOne/dirTwo/fileSix.txt":
-    "Where there's a will, there's a way.",
+  "./dirOne/fileFive.txt": "Every cloud has a silver lining.",
+  "./dirOne/dirTwo/fileSix.txt": "Where there's a will, there's a way.",
   "./dirOne/dirTwo/fileSeven.txt":
     "The only limit to our realization of tomorrow will be our doubts of today.",
   "./dirOne/dirTwo/dirThree/fileEight.txt":
@@ -26,8 +22,7 @@ const json = {
     "Don't count the days, make the days count.",
   "./dirTwo/fileTen.txt":
     "The only impossible journey is the one you never begin.",
-  "./dirTwo/fileEleven.txt":
-    "Believe you can and you're halfway there.",
+  "./dirTwo/fileEleven.txt": "Believe you can and you're halfway there.",
   "./dirTwo/dirFour/fileTwelve.txt":
     "Life is either a daring adventure or nothing at all.",
   "./dirTwo/dirFour/fileThirteen.txt":
@@ -37,7 +32,6 @@ const json = {
   "./dirTwo/dirFour/dirFive/fileFifteen.txt":
     "The only limit to our realization of tomorrow will be our doubts of today.",
 };
-
 
 beforeEach(() => {
   memfs.vol.reset();
@@ -119,9 +113,7 @@ test("multiplexes multiple streams", async () => {
     console.error(error);
   }
   await new Promise((resolve) => {
-    console.log(c.blue(`registering the end event`));
     destination.on("end", () => {
-      console.log(c.magentaBright(`end event exiting the test now`));
       resolve();
     });
   });
@@ -136,7 +128,7 @@ test("it handlese empty directories", async () => {
   memfs.vol.mkdirSync("/app/emptyDirTwo");
   memfs.vol.mkdirSync("/app/emptyDirThree");
   const emptyDirs = Object.keys(memfs.vol.toJSON());
- 
+
   const returnedEmptyDirs = [];
   const path = "/app";
   const destination = new PassThrough();
@@ -185,9 +177,7 @@ test("it handlese empty directories", async () => {
       console.log("destination stream closed finishing the test now");
       resolve();
     });
-  });  
-  console.log(emptyDirs)
-  returnedEmptyDirs.shift()
-  console.log(returnedEmptyDirs)
-  expect(emptyDirs).toEqual(expect.arrayContaining(returnedEmptyDirs))
+  });
+  returnedEmptyDirs.shift();
+  expect(emptyDirs).toEqual(expect.arrayContaining(returnedEmptyDirs));
 });

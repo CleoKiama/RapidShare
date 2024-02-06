@@ -2,6 +2,8 @@ import { createSocket } from "node:dgram";
 import c from "ansi-colors";
 import multiplexer from "./multiplexer.js";
 import { PassThrough } from "node:stream";
+
+
 const address = "localhost";
 const port = 3000;
 
@@ -23,6 +25,7 @@ function getClientAddress() {
     port: 4000,
   };
 }
+
 export default async function main(rootPath) {
   try {
     const { address, port } = getClientAddress();

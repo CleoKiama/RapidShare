@@ -77,14 +77,12 @@ test('handles one empty Directory',async ()=>{
   memfs.vol.mkdirSync("/app");
    const path = '/app' ; 
    let emptyDirs = Object.keys(memfs.vol.toJSON())
-   console.log(emptyDirs)
    const foundEmptyDir = []
    const generate = new GenerateFiles(path);
    let hasPropertyEmpty = false
   for await (const dirent of generate) {
     if(Object.hasOwn(dirent, 'empty')) {
       hasPropertyEmpty  = true
-      console.log(c.green(`dirent does indeed have own prop empty`))
     } 
     foundEmptyDir.push(dirent.path)
     expect(dirent.empty).toBe(true)
