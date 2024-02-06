@@ -1,7 +1,8 @@
 import dgram from "dgram";
-import { userInfo, networkInterfaces, platform } from "os";
+import { userInfo} from "os";
 import c from "ansi-colors";
 import { clearInterval } from "timers";
+import thisMachineAddress from "./currentAssignedAddress.js";
 import EventEmitter from "events";
 
 
@@ -13,13 +14,6 @@ const multicastAdrPort = 8080;
 //const port = 4000;
 const foundDevices = new Map();
 
-const thisMachineAddress = function () {
-  if (platform() === "linux") {
-    return networkInterfaces()["wlo1"][0].address;
-  }
-
-  return networkInterfaces()["Wi-Fi"][0].address;
-};
 
 udpSocket.on("error", (error) => {
   console.error(error.message);
