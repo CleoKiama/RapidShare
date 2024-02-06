@@ -1,45 +1,69 @@
 import dgram from "dgram";
+import { userInfo } from "os";
 import c from "ansi-colors";
-import {userInfo} from "os";
+import { clearInterval } from "timers";
 import thisMachineAddress from "./currentAssignedAddress.js";
-export default function createMulticastServer () {
+import EventEmitter from "events";
 
-  const server = dgram.createSocket("udp4");
-  const multicastAddress = "239.1.1.1";
-  const bindingPort = 8080
+export const deviceDiscovery = new EventEmitter();
 
-  server.on("error", (err) => {
-    console.log(`server error:\n${err.stack}`);
-    server.close();
+const udpSocket = dgram.createSocket("udp4");
+const multicastAddress = "239.1.1.1";
+const multicastAdrPort = 8080;
+//const port = 4000;
+const foundDevices = new Map();
+
+udpSocket.on("error", (error) => {
+  console.error(error.message);
+  udpSocket.close();
+  process.exit(1);
+});
+function sendUserData(callback) {
+  const user = JSON.stringify(userInfo());
+  udpSocket.send(user, multicastAdrPort, multicastAddress, (error) => {
+    if (error) {
+      if (typeof callback === "function") callback();
+      throw error;
+    }
+    if (typeof callback === "function") callback();
+    console.log(c.green("message sent"));
   });
-  
-  server.bind(bindingPort,() => {
-    server.addMembership(multicastAddress);
-    server.setMulticastTTL(128)
-    server.setMulticastLoopback(true)
-    let {address,port} = server.address()
-    console.log(c.green(`server listening to multicast group on adr : ${address}  port : ${port}`));
-  });
-  
-  server.on("message", (msg, rinfo) => {
-    if (rinfo.address === thisMachineAddress()) return;
-    console.log(c.blue(`received message from multicast: ${msg}`));
-    console.log(c.yellow(`adr ${rinfo.address} : port => ${rinfo.port}`));
-    console.log(c.magenta(`sending back a reply...`));
-    const deviceDetails = JSON.stringify(userInfo());
-  
-    server.send(
-      deviceDetails,
-      rinfo.port,
-      rinfo.address,
-      (error) => {
-        if (error) {
-          console.error(c.red(`error echoing back a response  ${error.message}`));
-        }
+}
+function broadCastDevice() {
+  const broadCastInterval = setInterval(() => {
+    if (foundDevices.size > 0) {
+      clearInterval(broadCastInterval);
+      console.log(`found some devices`);
+      for (const value of foundDevices.entries()) {
+        console.log(value);
       }
-    );
-  });
-  
+      return setTimeout(() => {
+        udpSocket.close();
+      }, 2000);
+    }
+    console.log(c.yellow("sending message"));
+    sendUserData();
+  }, 2000);
 }
 
-createMulticastServer()
+udpSocket.bind((error) => {
+  if (error) {
+    console.error(error.message);
+    udpSocket.close();
+  }
+  udpSocket.addMembership(multicastAddress);
+  const { address, port } = udpSocket.address();
+  console.log(c.green(`receiver is listening on ${address}:${port}`));
+  broadCastDevice();
+});
+
+udpSocket.on("message", (msg, rinfo) => {
+  if (rinfo.address === thisMachineAddress()) return;
+  const deviceFound = JSON.parse(msg.toString());
+  console.log(c.yellow(`received message from ${rinfo.address}`));
+  foundDevices.set(rinfo.address, {
+    port: rinfo.port,
+    username: deviceFound.username,
+  });
+  deviceDiscovery.emit("deviceFound", rinfo.address, deviceFound.username);
+});

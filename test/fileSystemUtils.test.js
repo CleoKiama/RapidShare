@@ -1,6 +1,6 @@
 import * as memfs from "memfs";
 jest.mock("fs/promises", () => memfs.promises);
-import identifyFileType from "../identifyFileType.js";
+import identifyPath from "../pathType.js";
 
 const json = {
   "./dirOne/fileOne.txt": "content of file One",
@@ -12,7 +12,7 @@ beforeEach(() => {
 
 test("it identifies a directory", async () => {
   const pathToFile = "/app/dirOne";
-  let util = await identifyFileType(pathToFile);
+  let util = await identifyPath(pathToFile);
   expect(util).toEqual({
     isDir: true,
     isFile: false,
@@ -21,7 +21,7 @@ test("it identifies a directory", async () => {
 
 test("it identifies a file", async () => {
     const pathToFile = "/app/dirOne/fileOne.txt";
-    let util = await identifyFileType(pathToFile);
+    let util = await identifyPath(pathToFile);
     expect(util).toEqual({
       isDir: false,
       isFile: true,

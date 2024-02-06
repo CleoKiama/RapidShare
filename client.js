@@ -1,10 +1,12 @@
-
 import { createSocket } from "dgram";
 import Demultiplexer from "./demultiplexer.js";
 import { PassThrough } from "stream";
+import thisMachineAddress from "./currentAssignedAddress.js";
+import createMulticastServer from "./multicastListener.js";
 
-const address = "localhost";
-const port = 4000;
+const  multicastSocket = createMulticastServer()
+const address = thisMachineAddress();
+const port = process.env.NODE_ENV === "test" ? 4000 : 3000;
 
 const socket = createSocket("udp4");
 socket.bind(port, address, (error) => {
@@ -26,7 +28,6 @@ async function main() {
     });
 
     await awaitDemultiplexing;
-
   } catch (error) {
     io.end();
   }
@@ -35,9 +36,10 @@ async function main() {
 main()
   .then(() => {
     socket.close();
+    multicastSocket.close()
   })
   .catch((error) => {
-    console.error(error.message)
+    console.error(error.message);
     socket.close();
   });
 

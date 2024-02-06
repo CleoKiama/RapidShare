@@ -1,6 +1,6 @@
 import { stat } from "fs/promises";
 
-export default async function identifyFileType(path) {
+export default async function identifyPath(path) {
   try {
     const stats = await stat(path);
     if (stats.isDirectory()) {
