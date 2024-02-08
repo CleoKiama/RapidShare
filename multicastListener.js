@@ -42,5 +42,3 @@ export default function createMulticastServer () {
   return server
 }
 
-
-createMulticastServer()

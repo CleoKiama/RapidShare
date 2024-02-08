@@ -1,4 +1,4 @@
-import { readdir } from "fs-extra";
+import { readdir } from "fs/promises";
 
 export default class GenerateFiles {
   constructor(basePath, concurrency) {
@@ -49,9 +49,10 @@ export default class GenerateFiles {
            } 
            return { done: false, value : subset };
         } catch (error) {
-          return console.error(
+           console.error(
             `something went wrong reading the files and dirs ${error.message}`
           );
+          return { done: true };
         }
       },
     };

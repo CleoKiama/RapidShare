@@ -1,8 +1,52 @@
 import fs from "fs-extra";
+import lazystream from "lazystream";
+import { createWriteStream } from "fs";
+const incomingFiles = new Map();
+ // * mock process.argv2 value 
+process.env.NODE_ENV === "test" && (process.argv[2] = "/newVolume/")
 
-async function createFS(path, buffer) {
-  if (buffer === null) return await fs.ensureDir(path);
-  await fs.writeFile(path, buffer);
+async function writeFilesAndFolders(path, buffer) {
+   // ** check to see if the path separator's are fine
+   const finalPath = `${process.argv[2]}${path}` 
+  return new Promise((resolve, reject) => {
+    if (buffer === null) return fs.ensureDir(finalPath).then(resolve, reject);
+    if (incomingFiles.has(finalPath)) {
+      if (buffer.toString() === "all done") {
+        incomingFiles.get(finalPath).end = true;
+        incomingFiles.get(finalPath).file.end();
+        return resolve();
+      }
+      const { file, end } = incomingFiles.get(finalPath);
+      file.write(buffer, (err) => {
+        if (err) return reject(err);
+        //** what if there is a pending write operation in the internal buffer and we're closing the stream */
+        end && file.end();
+        resolve();
+      });
+    } else if (buffer.toString() === "all done") {
+      return fs.ensureFile(finalPath).then(resolve, reject);
+    }
+       fs.ensureFile(finalPath).then(()=>{
+    var options = {
+      start: 0,
+    }
+     
+    incomingFiles.set(finalPath, {
+      file: new lazystream.Writable(() => {
+        return createWriteStream(finalPath,options);
+      }),
+      end: false,
+    });
+    const { file, end } = incomingFiles.get(finalPath);
+    // ** handle the drain overflow check if it is needed
+    file.write(buffer, (err) => {
+      if (err) return reject(err);
+      end && file.end();
+      resolve();
+    });
+
+       })
+  });
 }
 
 export default async function Demultiplexer(source) {
@@ -31,10 +75,11 @@ export default async function Demultiplexer(source) {
       } else chunk.copy(contentBuffer, 0, 1 + pathLength, chunk.length);
 
       writingOperations++;
-      createFS(currentPath, contentBuffer)
+      writeFilesAndFolders(currentPath, contentBuffer)
         .then(() => {
           //!this might never exit if the readable event never fires like it happened in the test case using a passThrough stream
           if (--writingOperations === 0 && source.readableEnded) resolve();
+
         })
         .catch(reject);
       currentLength = null;

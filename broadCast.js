@@ -34,9 +34,6 @@ function broadCastDevice() {
     if (foundDevices.size > 0) {
       clearInterval(broadCastInterval);
       console.log(`found some devices`);
-      for (const value of foundDevices.entries()) {
-        console.log(value);
-      }
       return setTimeout(() => {
         udpSocket.close();
       }, 2000);

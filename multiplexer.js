@@ -1,5 +1,6 @@
 import createStreamSources from "./createFileStreams.js";
 import GenerateFiles from "./generateFiles.js";
+import c from "ansi-colors";
 export function createPacket(path, chunk) {
   if (chunk === null) {
     const pathBuffer = Buffer.from(path);
@@ -45,6 +46,7 @@ const sendEmptyDirPacket = async (emptyDir, destination) => {
     });
   });
 };
+
 async function sendPacket(files, destination) {
   let sources = createStreamSources(files);
   let pendingWritingOperations = 0;
@@ -52,21 +54,48 @@ async function sendPacket(files, destination) {
     while (files.length > 0) {
       const currentSource = sources.shift();
       const currentPath = files.shift();
+
       if (!currentPath) return;
       currentSource.on("readable", function () {
         let chunk;
         while ((chunk = this.read()) !== null) {
+          pendingWritingOperations++;
           destination.write(createPacket(currentPath, chunk), (err) => {
-            if (err) throw new Error(err.message);
+            if (err) return reject(err)
             pendingWritingOperations -= 1;
           });
-          ++pendingWritingOperations;
         }
       });
-      currentSource.on("error", reject);
-      currentSource.on("end", () => {
-        if (files.length === 0 && pendingWritingOperations === 0) resolve();
+      currentSource.on("error", (err) => {
+        console.error(
+          c.red(
+            `error happened while reading file ${currentPath} : ${err.message}`
+          )
+        );
+        reject(err);
       });
+      currentSource.on("end", () => {
+        const endOfFileMessage = "all done";
+        destination.write(
+          createPacket(currentPath, Buffer.from(endOfFileMessage)),
+          (err) => {
+            if (err) return reject(err);
+            if (files.length === 0 && pendingWritingOperations === 0) resolve();
+          }
+        );
+      });
+
     }
   });
 }
+
+/* 
+
+
+*/
+
+/* 
+currentSource.on("end", () => {
+        if (files.length === 0 && pendingWritingOperations === 0) resolve();
+      });
+*/

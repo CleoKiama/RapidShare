@@ -6,9 +6,9 @@ import { deviceDiscovery } from "./broadCast.js";
 import thisMachineAddress from "./currentAssignedAddress.js";
 import createMulticastServer from "./multicastListener.js";
 import { createReadStream } from "node:fs";
-import identifyPath from "./identifyPath.js";
+import identifyPath from "./pathType.js";
 import { error } from "node:console";
-
+import { createPacket } from "./multiplexer.js";
 const address = thisMachineAddress();
 const port = 3000;
 
@@ -43,18 +43,23 @@ async function getClientAddress() {
 }
 async function returnFileStream(rootPath, destination) {
   return new Promise((resolve, reject) => {
-    const fileStream = createReadStream(rootPath).pipe(destination);
-    fileStream.once("end", ()=>{
+    const fileStream = createReadStream(rootPath);
+    fileStream.on("data", (data) => {
+      destination.write(createPacket(rootPath, data));
+    });
+    fileStream.once("end", () => {
       if (destination.writable) return destination.end();
-      resolve()
+      resolve();
     });
     fileStream.on(error, reject);
   });
 }
+
 export default async function main(rootPath) {
   try {
-     //!the address and the port could be undefined before the getClientAddress resolves
-    const { address, port } = await getClientAddress();
+    //!the address and the port could be undefined before the getClientAddress resolves
+    const { address, port, username } = await getClientAddress();
+
     const io = new PassThrough();
     io.on("data", (data) => {
       server.send(data, port, address);
@@ -69,8 +74,9 @@ export default async function main(rootPath) {
         multicastServer.close();
       });
     });
-    //! the isDir could be undefined before this promise resolves 
-    const { isDir } = await identifyPath();
+    //! the isDir could be undefined before this promise resolves
+    const { isDir } = await identifyPath(rootPath);
+    console.log(c.green(`sending file to userName: ${username}`));
     isDir
       ? await multiplexer(rootPath, io)
       : await returnFileStream(rootPath, io);
@@ -83,3 +89,15 @@ export default async function main(rootPath) {
 }
 
 export { server };
+
+const rootPath = process.argv[2];
+if (rootPath) {
+  console.log(
+    c.blueBright(`starting sharing the file with path : ${rootPath}`)
+  );
+  main(rootPath)
+    .then(() => console.log("all done"))
+    .catch((error) => {
+      console.error(c.red(`error : ${error.message}`));
+    });
+} else console.log(`rootPath is undefined :${rootPath}`);

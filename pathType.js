@@ -8,7 +8,7 @@ export default async function identifyPath(path) {
         isDir: true,
         isFile: false,
       };
-    } else if (stats.isFile) {
+    } else if (stats.isFile()) {
       return {
         isDir: false,
         isFile: true,
@@ -18,3 +18,4 @@ export default async function identifyPath(path) {
     throw new Error(error);
   }
 }
+
