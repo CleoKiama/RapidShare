@@ -1,6 +1,7 @@
 import * as memfs from "memfs";
 jest.mock("fs/promises", () => memfs.promises);
 jest.mock("fs-extra", () => memfs);
+import fs from 'fs'
 import multiplexer from "../multiplexer.js";
 import Demultiplexer from "../demultiplexer.js";
 import { PassThrough } from "stream";
@@ -28,7 +29,7 @@ beforeEach(() => {
 
   memfs.vol.reset();
 });
-  
+  //**memfs does not seem to implement a mock for ensure dir from fs-extra so this will fail 
 test("demultiplexes nested files and folders", async () => {
   memfs.vol.fromJSON(json, "/app");
   const pathToFiles = "/app";
@@ -84,3 +85,9 @@ test("the file demultiplexes one empty directories", async () => {
   let currentFs = memfs.vol.toJSON();
   expect(currentFs).toEqual(prevFs);
 });
+
+
+test("memfs mocks ensureDir",()=>{
+  console.log(fs.ensureDir)
+  expect(typeof fs.ensureDir).toBe("function")
+})

@@ -8,44 +8,49 @@ import { promisify } from "util";
 process.env.NODE_ENV === "test" && (process.argv[2] = "/media/cleo/Library");
 
 const destinationPath = validatePath(process.argv[2]);
-
-export default class resolveDestination {
+export default class DestinationResolver {
   constructor() {
-    this.incomingFiles = new Map();
-    this.chunkBuffer = new Map()
+    this.pendingFiles = new Map();
   }
-  async returnDestination(finalPath, contentBuffer) {
-    let destination;
+
+  async writeToDestination(destinationPath, dataBuffer) {
+    let fileStream;
     let writeAsync;
-    if (this.incomingFiles.has(finalPath)) {
-      destination = this.incomingFiles.get(finalPath);
-      writeAsync = promisify(destination.write).bind(destination);
-      return await writeAsync(contentBuffer); //TODO this path might need to be normalized
+
+    if (this.pendingFiles.has(destinationPath)) {
+      fileStream = this.pendingFiles.get(destinationPath);
+      writeAsync = promisify(fileStream.write).bind(fileStream);
+      return await writeAsync(dataBuffer);
     }
-    console.log("ensuring the file once hopefully")
-    // ** there is a block of the event loop here but once per new file so should not cause too much harm I hope
-     this.ensurePath(finalPath);
-    console.log(`after resolve content Buffer ${formatBytes(contentBuffer.length)}`)
-    destination = createWriteStream(finalPath);
-    writeAsync = promisify(destination.write).bind(destination);
-    this.incomingFiles.set(finalPath, destination);
-    await writeAsync(contentBuffer);
+
+    console.log("Ensuring the file exists")
+    this.createFileIfNotExists(destinationPath);
+    console.log(`Writing data: ${formatBytes(dataBuffer.length)}`)
+    fileStream = createWriteStream(destinationPath);
+    writeAsync = promisify(fileStream.write).bind(fileStream);
+    this.pendingFiles.set(destinationPath, fileStream);
+    await writeAsync(dataBuffer);
   }
-  ensurePath(path) {
-    return fs.ensureFileSync(path);
+
+  createFileIfNotExists(filePath) {
+    return fs.ensureFileSync(filePath);
   }
-  ensureDirPath(path) {
-    console.log(c.red("running ensureDir path probably a problem"));
-    return fs.ensureDir(path);
+
+  createDirectoryIfNotExists(directoryPath) {
+    console.log(c.red("Creating directory (if it doesn't exist)"));
+    return fs.ensureDir(directoryPath);
   }
-  async saveData(currentPath, contentBuffer) {
-    const finalPath = `${destinationPath}${currentPath.toString()}`;
-    if (contentBuffer === null) return this.ensureDirPath(finalPath);
-    if (contentBuffer.toString() === "all done") {
-      console.log(c.green("all done"));
-      return this.incomingFiles.get(finalPath).end();
+
+  async saveToFileSystem(relativePath, dataBuffer) {
+    const fullPath = `${destinationPath}${relativePath.toString()}`;
+    if (dataBuffer === null) return this.createDirectoryIfNotExists(fullPath);
+    if (dataBuffer.toString() === "all done") {
+      console.log(c.green("File transfer complete"));
+      return this.pendingFiles.get(fullPath).end();
     }
-    await this.returnDestination(finalPath, contentBuffer);
+    await this.writeToDestination(fullPath, dataBuffer);
   }
 }
+
+
 

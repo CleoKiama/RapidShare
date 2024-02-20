@@ -1,7 +1,7 @@
 import c from "ansi-colors";
-import resolveDestination from "./destinationResolver.js";
+import DestinationResolver from "./destinationResolver.js";
 export default async function Demultiplexer(source) {
-  let resolveDestinationInstance = new resolveDestination();
+  let DestinationResolverInstance = new DestinationResolver();
   let writingOperations = 0;
   return new Promise((resolve, reject) => {
     let currentLength = null;
@@ -28,8 +28,8 @@ export default async function Demultiplexer(source) {
         contentBuffer = null;
       } else chunk.copy(contentBuffer, 0, 1 + pathLength, chunk.length);
       writingOperations++;
-      resolveDestinationInstance
-        .saveData(currentPath, contentBuffer)
+      DestinationResolverInstance
+        .saveToFileSystem(currentPath, contentBuffer)
         .then(() => {
           if (--writingOperations === 0 && source.readableEnded) resolve();
         }).catch(error=>{
