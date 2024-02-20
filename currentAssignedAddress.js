@@ -8,6 +8,7 @@ export default function thisMachineAddress() {
   //!consider cases for the ethernet cable
   if (platform() === "linux") {
     return networkInterfaces()["wlo1"][0].address;
-  } else networkInterfaces()["Wi-Fi"][0].address;
+  } else return networkInterfaces()["Wi-Fi"][0].address;
   
 }
+console.log("line no 14 currentAssignedAddress.js : ",thisMachineAddress())

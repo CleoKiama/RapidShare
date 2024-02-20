@@ -1,6 +1,8 @@
 import createStreamSources from "./createFileStreams.js";
 import GenerateFiles from "./generateFiles.js";
 import c from "ansi-colors";
+
+
 export function createPacket(path, chunk) {
   if (chunk === null) {
     const pathBuffer = Buffer.from(path);
@@ -31,6 +33,7 @@ export default async function multiplexer(rootPath, destination) {
         continue;
       }
       await sendPacket(iteratorResult.value, destination);
+
       iteratorResult = await iterator.next();
     }
   } catch (error) {
@@ -56,14 +59,19 @@ async function sendPacket(files, destination) {
       const currentPath = files.shift();
 
       if (!currentPath) return;
-      currentSource.on("readable", function () {
+      currentSource.on("readable",async function () {
         let chunk;
         while ((chunk = this.read()) !== null) {
           pendingWritingOperations++;
-          destination.write(createPacket(currentPath, chunk), (err) => {
-            if (err) return reject(err)
+          let drain =  destination.write(createPacket(currentPath, chunk), (err) => {
+            if (err) return reject(err);
             pendingWritingOperations -= 1;
           });
+          if(!drain) {
+            return new Promise (resolve=>{
+               destination.once("drain",resolve)
+            })
+          }
         }
       });
       currentSource.on("error", (err) => {
@@ -80,22 +88,13 @@ async function sendPacket(files, destination) {
           createPacket(currentPath, Buffer.from(endOfFileMessage)),
           (err) => {
             if (err) return reject(err);
-            if (files.length === 0 && pendingWritingOperations === 0) resolve();
+            if (files.length === 0 && pendingWritingOperations === 0) {
+            resolve();
+            console.log(c.magentaBright(`resolved multiplexer with ${pendingWritingOperations} due`))  
+          }
           }
         );
       });
-
     }
   });
 }
-
-/* 
-
-
-*/
-
-/* 
-currentSource.on("end", () => {
-        if (files.length === 0 && pendingWritingOperations === 0) resolve();
-      });
-*/

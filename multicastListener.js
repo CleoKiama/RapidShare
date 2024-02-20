@@ -3,10 +3,11 @@ import c from "ansi-colors";
 import {userInfo} from "os";
 import thisMachineAddress from "./currentAssignedAddress.js";
  //returns the multicast server for clean up and closing
+ const bindingPort = 8080
+ const multicastAddress = "239.1.1.1";
+
 export default function createMulticastServer () {
   const server = dgram.createSocket("udp4");
-  const multicastAddress = "239.1.1.1";
-  const bindingPort = 8080
 
   server.on("error", (err) => {
     console.log(`server error:\n${err.stack}`);
@@ -18,7 +19,7 @@ export default function createMulticastServer () {
     server.setMulticastTTL(128)
     server.setMulticastLoopback(true)
     let {address,port} = server.address()
-    console.log(c.green(`server listening to multicast group on adr : ${address}  port : ${port}`));
+    console.log(c.green(`multicast server listening to multicast group on adr : ${address}  port : ${port}`));
   });
   
   server.on("message", (msg, rinfo) => {
@@ -41,4 +42,6 @@ export default function createMulticastServer () {
   });
   return server
 }
+ 
 
+export {bindingPort,multicastAddress}

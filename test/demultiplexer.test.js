@@ -1,6 +1,6 @@
 import * as memfs from "memfs";
 jest.mock("fs/promises", () => memfs.promises);
-jest.mock("fs", () => memfs);
+jest.mock("fs-extra", () => memfs);
 import multiplexer from "../multiplexer.js";
 import Demultiplexer from "../demultiplexer.js";
 import { PassThrough } from "stream";
@@ -28,7 +28,7 @@ beforeEach(() => {
 
   memfs.vol.reset();
 });
- 
+  
 test("demultiplexes nested files and folders", async () => {
   memfs.vol.fromJSON(json, "/app");
   const pathToFiles = "/app";
@@ -42,7 +42,7 @@ test("demultiplexes nested files and folders", async () => {
 
   const source = new PassThrough();
   let pendingDemux = Promise.resolve(Demultiplexer(source));
-  await multiplexer(pathToFiles, source);
+  await multiplexer(pathToFiles,source);
   try {
     await pendingDemux;
   } catch (err) {
@@ -54,9 +54,7 @@ test("demultiplexes nested files and folders", async () => {
     if (regex.test(value)) return true;
     else return false;
   });
-
   expect(currentFsKeys).toHaveLength(initialFilePaths.length);
-  
 });
 
 test("the file demultiplexes empty directories", async () => {

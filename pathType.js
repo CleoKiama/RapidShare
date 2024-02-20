@@ -1,7 +1,7 @@
 import { stat } from "fs/promises";
 
 export default async function identifyPath(path) {
-  try {
+  
     const stats = await stat(path);
     if (stats.isDirectory()) {
       return {
@@ -14,8 +14,6 @@ export default async function identifyPath(path) {
         isFile: true,
       };
     }
-  } catch (error) {
-    throw new Error(error);
-  }
+ 
 }
 
