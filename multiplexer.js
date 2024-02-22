@@ -1,18 +1,22 @@
 import createStreamSources from "./createFileStreams.js";
 import GenerateFiles from "./generateFiles.js";
 import c from "ansi-colors";
-
+import GetRootSourcePath from "./rootSourcePath.js";
+const rootSourcePath = GetRootSourcePath()
 
 export function createPacket(path, chunk) {
+    let finalPath
+    let startIndex = path.indexOf(rootSourcePath)
+    finalPath = path.substring(startIndex)
   if (chunk === null) {
-    const pathBuffer = Buffer.from(path);
+    const pathBuffer = Buffer.from(finalPath);
     const packet = Buffer.alloc(4 + 1 + pathBuffer.length);
     packet.writeUInt32BE(1 + pathBuffer.length, 0);
     packet.writeUInt8(pathBuffer.length, 4);
     pathBuffer.copy(packet, 5, 0, pathBuffer.length);
     return packet;
   }
-  const pathBuffer = Buffer.from(path);
+  const pathBuffer = Buffer.from(finalPath);
   const packet = Buffer.alloc(4 + 1 + pathBuffer.length + chunk.length);
   packet.writeUInt32BE(1 + pathBuffer.length + chunk.length, 0);
   packet.writeUInt8(pathBuffer.length, 4);
@@ -33,7 +37,6 @@ export default async function multiplexer(rootPath, destination) {
         continue;
       }
       await sendPacket(iteratorResult.value, destination);
-
       iteratorResult = await iterator.next();
     }
   } catch (error) {
@@ -90,7 +93,6 @@ async function sendPacket(files, destination) {
             if (err) return reject(err);
             if (files.length === 0 && pendingWritingOperations === 0) {
             resolve();
-            console.log(c.magentaBright(`resolved multiplexer with ${pendingWritingOperations} due`))  
           }
           }
         );
@@ -98,3 +100,6 @@ async function sendPacket(files, destination) {
     }
   });
 }
+
+
+

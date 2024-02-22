@@ -1,6 +1,11 @@
 import * as memfs from "memfs";
 jest.mock("fs/promises", () => memfs.promises);
 jest.mock("fs", () => memfs);
+jest.mock("../rootSourcePath.js",()=>{
+  return jest.fn(()=>{
+    return "/root"
+  })
+})
 import multiplexer, { createPacket } from "../multiplexer.js";
 import { PassThrough } from "stream";
 import { join } from "path";
@@ -40,45 +45,45 @@ beforeEach(() => {
 test("creates a packet with the path of the file in it", () => {
   const chunkContent = "hello this is chunk content";
   const chunk = Buffer.from(chunkContent);
-  const path = "/path/app/files/file.txt";
-  const pathBuffer = Buffer.from(path);
+  const path = "home/user/root/files/file.txt";
+  const expectedBasePath = "/root/files/file.txt";
   const packet = createPacket(path, chunk);
   const packetSize = packet.readUInt32BE(0);
-  expect(packetSize).toBe(1 + pathBuffer.length + chunk.length);
-  const pathLength = packet.readUInt8(4);
-  expect(pathLength).toBe(pathBuffer.length);
-  const returnedPath = packet.toString("utf8", 5, 5 + pathBuffer.length);
+  expect(packetSize).toBe(1 + expectedBasePath.length + chunk.length);
+  const returnedPathLength = packet.readUInt8(4);
+  expect(returnedPathLength).toBe(expectedBasePath.length);
+  const returnedPath = packet.toString("utf8", 5, 5 + expectedBasePath.length);
   const returnedChunk = packet.toString(
     "utf8",
-    5 + pathBuffer.length,
+    5 + expectedBasePath.length,
     packet.length
   );
-  expect(returnedPath).toBe(path);
+  expect(returnedPath).toBe(expectedBasePath);
   expect(returnedChunk).toBe(chunkContent);
 });
 
 test("sends a packet with just the path and no content chunk", () => {
-  const path = "/path/app/files/file.txt";
-  const pathBuffer = Buffer.from(path);
+  const path = "home/user/root/files/file.txt";
+  const expectedBasePath = "/root/files/file.txt";
   const packet = createPacket(path, null);
   const packetSize = packet.readUInt32BE(0);
-  expect(packetSize).toBe(1 + pathBuffer.length);
-  const pathLength = packet.readUInt8(4);
-  expect(pathLength).toBe(pathBuffer.length);
-  const returnedPath = packet.toString("utf8", 5, 5 + pathBuffer.length);
-  expect(returnedPath).toBe(path);
+  expect(packetSize).toBe(1 + expectedBasePath.length);
+  const returnedPathLength = packet.readUInt8(4);
+  expect(returnedPathLength).toBe(expectedBasePath.length);
+  const returnedPath = packet.toString("utf8", 5, 5 + expectedBasePath.length);
+  expect(returnedPath).toBe(expectedBasePath);
 });
 test("multiplexes multiple streams", async () => {
-  memfs.vol.fromJSON(json, "/app");
-  const pathToFiles = "/app";
+  memfs.vol.fromJSON(json, "/app/root");
+  const pathToFiles = "/app/root";
   const paths = Object.keys(json);
-  const content = Object.values(json);
-  const expectedPaths = paths.map((path) => join("/app", `${path}`));
+  const expectedData = Object.values(json);
+  const expectedPaths = paths.map((path) => join("/root", `${path}`));
   const destination = new PassThrough();
-  let currentLength = null;
-  let currentPath = null;
-  let pathsReturned = 0;
-  let chunksReturned = 0;
+  var currentLength = null;
+  var currentPath = null;
+  var returnedPaths = []
+  var returnedData = []
   destination.on("readable", function () {
     let chunk;
     if (currentLength === null) {
@@ -94,20 +99,19 @@ test("multiplexes multiple streams", async () => {
     }
     let pathLength = chunk.readUInt8(0);
     currentPath = chunk.toString("utf8", 1, 1 + pathLength);
-    expect(expectedPaths).toContain(currentPath);
-    pathsReturned++;
-    const returnedContent = chunk.toString(
+    const returnedChunk = chunk.toString(
       "utf8",
       1 + pathLength,
       chunk.length
     );
-    expect(content).toContain(returnedContent);
-    chunksReturned++;
+     if(returnedChunk!=="all done") {
+      returnedData.push(returnedChunk)
+      returnedPaths.push(currentPath)
+     }
     currentLength = null;
     currentPath = null;
   });
   try {
-    // ** potential zalgo
     await multiplexer(pathToFiles, destination);
   } catch (error) {
     console.error(error);
@@ -117,20 +121,23 @@ test("multiplexes multiple streams", async () => {
       resolve();
     });
   });
-
-  expect(pathsReturned).toBe(paths.length);
-  expect(chunksReturned).toBe(paths.length);
+    expect(returnedData).toEqual(expect.arrayContaining(expectedData))
+    expect(returnedPaths).toEqual(expect.arrayContaining(expectedPaths))
+    expect(returnedData).toHaveLength(expectedData.length)
+    expect(returnedPaths).toHaveLength(expectedPaths.length)
 });
 
-test("it handlese empty directories", async () => {
+test("it handles empty directories", async () => {
   memfs.vol.mkdirSync("/app");
-  memfs.vol.mkdirSync("/app/emptyDirOne");
-  memfs.vol.mkdirSync("/app/emptyDirTwo");
-  memfs.vol.mkdirSync("/app/emptyDirThree");
-  const emptyDirs = Object.keys(memfs.vol.toJSON());
-
+  memfs.vol.mkdirSync("/app/root");
+  memfs.vol.mkdirSync("/app/root/emptyDirOne");
+  memfs.vol.mkdirSync("/app/root/emptyDirTwo");
+  memfs.vol.mkdirSync("/app/root/emptyDirThree");
+  const emptyDirs = Object.keys(memfs.vol.toJSON()).map((value)=>{
+         return value.substring(4)
+  })
   const returnedEmptyDirs = [];
-  const path = "/app";
+  const path = "/app/root";
   const destination = new PassThrough();
   let currentLength = null;
   let currentPath = null;
@@ -179,5 +186,6 @@ test("it handlese empty directories", async () => {
     });
   });
   returnedEmptyDirs.shift();
-  expect(emptyDirs).toEqual(expect.arrayContaining(returnedEmptyDirs));
+  expect(returnedEmptyDirs).toEqual(expect.arrayContaining(emptyDirs));
+  expect(returnedEmptyDirs).toHaveLength(emptyDirs.length);
 });

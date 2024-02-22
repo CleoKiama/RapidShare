@@ -4,14 +4,16 @@ import c from "ansi-colors";
 import { clearInterval } from "timers";
 import thisMachineAddress from "./currentAssignedAddress.js";
 import EventEmitter from "events";
-import {bindingPort as multicastAdrPort ,multicastAddress } from './multicastListener.js'
+import {
+  bindingPort as multicastAdrPort,
+  multicastAddress,
+} from "./multicastListener.js";
 export const deviceDiscovery = new EventEmitter();
 
 const udpSocket = dgram.createSocket("udp4");
 
-
 //const port = 4000;
-const foundDevices = new Map();
+export const foundDevices = new Map();
 
 udpSocket.on("error", (error) => {
   console.error(error.message);
@@ -24,21 +26,19 @@ function sendUserData() {
     if (error) {
       throw error;
     }
-    
   });
 }
 function broadCastDevice() {
   const broadCastInterval = setInterval(() => {
     if (foundDevices.size > 0) {
       clearInterval(broadCastInterval);
-      
+
       return setTimeout(() => {
         udpSocket.close();
-      },1500);
+      }, 1500);
     }
     sendUserData();
   }, 2000);
- 
 }
 
 udpSocket.bind((error) => {
@@ -54,16 +54,17 @@ udpSocket.bind((error) => {
 
 udpSocket.on("message", (msg, rinfo) => {
   if (rinfo.address === thisMachineAddress()) return;
-  const clientPort = 3000
+  const clientPort = 3000;
   const deviceFound = JSON.parse(msg.toString());
   const deviceFoundInfo = {
     ...deviceFound,
-    address : rinfo.address,
-    port : clientPort
-  }
+    address: rinfo.address,
+    port: clientPort,
+  };
   console.log(c.yellow(`broadCaster received message from device below .. `));
-  console.log(deviceFoundInfo)
-  
-  foundDevices.set(rinfo.address,deviceFoundInfo);
-  deviceDiscovery.emit("deviceFound",deviceFoundInfo);
+  console.log(deviceFoundInfo);
+  if (!foundDevices.has(rinfo.address)) {
+    foundDevices.set(rinfo.address, deviceFoundInfo);
+    deviceDiscovery.emit("deviceFound", deviceFoundInfo);
+  }
 });

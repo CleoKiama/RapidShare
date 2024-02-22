@@ -1,11 +1,21 @@
 import * as memfs from "memfs";
 jest.mock("fs/promises", () => memfs.promises);
 jest.mock("fs-extra", () => memfs);
-import fs from 'fs'
-import multiplexer from "../multiplexer.js";
+jest.mock("fs", () => memfs);
+
+import fs from 'fs-extra'
 import Demultiplexer from "../demultiplexer.js";
+import multiplexer from "../multiplexer.js";
 import { PassThrough } from "stream";
 import path from "path";
+jest.mock("../rootDestinationPath",()=>{
+  return jest.fn(()=>"/app/newVolume")
+})
+jest.mock("../rootSourcePath.js",()=>{
+  return jest.fn(()=>{
+    return "/oldVolume"
+  })
+})
 const json = {
   "./oldVolume/dirOne/fileOne.txt": "file one text content",
   "./oldVolume/fileFive.txt": "content of file five.txt",
@@ -25,14 +35,13 @@ const json = {
 };
 
 beforeEach(() => {
-  process.argv[2] = "/newVolume";
-
   memfs.vol.reset();
 });
   //**memfs does not seem to implement a mock for ensure dir from fs-extra so this will fail 
 test("demultiplexes nested files and folders", async () => {
   memfs.vol.fromJSON(json, "/app");
-  const pathToFiles = "/app";
+  memfs.mkdirSync("/app/newVolume")
+  const pathToFiles = "/app/oldVolume";
   const prevFs = {};
   let initialFilePaths = Object.keys(json).map((key) => {
     return path.join("/app", key);
@@ -40,7 +49,6 @@ test("demultiplexes nested files and folders", async () => {
   Object.values(json).forEach((value, index) => {
     prevFs[initialFilePaths[index]] = value;
   });
-
   const source = new PassThrough();
   let pendingDemux = Promise.resolve(Demultiplexer(source));
   await multiplexer(pathToFiles,source);

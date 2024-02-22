@@ -4,10 +4,10 @@ import validatePath from "./validatePath";
 import fs, { createWriteStream } from "fs-extra";
 import c from "ansi-colors";
 import { promisify } from "util";
-//TODO change this to be one source of knowledge when later you add electron.js
-process.env.NODE_ENV === "test" && (process.argv[2] = "/media/cleo/Library");
+import rootDestinationPath from "./rootDestinationPath.js";
 
-const destinationPath = validatePath(process.argv[2]);
+const destinationPath = validatePath(rootDestinationPath());
+console.log(destinationPath)
 export default class DestinationResolver {
   constructor() {
     this.pendingFiles = new Map();
@@ -45,7 +45,6 @@ export default class DestinationResolver {
     const fullPath = `${destinationPath}${relativePath.toString()}`;
     if (dataBuffer === null) return this.createDirectoryIfNotExists(fullPath);
     if (dataBuffer.toString() === "all done") {
-      console.log(c.green("File transfer complete"));
       return this.pendingFiles.get(fullPath).end();
     }
     await this.writeToDestination(fullPath, dataBuffer);

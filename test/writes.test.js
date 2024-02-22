@@ -4,6 +4,7 @@ import fs from "fs-extra";
 import { Transform } from "node:stream";
 import Demultiplexer from "../demultiplexer.js";
 import formatBytes from "../formatBytes.js";
+
 function createPacket(path, chunk) {
   if (chunk === null) {
     const pathBuffer = Buffer.from(path);

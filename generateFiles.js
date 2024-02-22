@@ -31,7 +31,6 @@ export default class GenerateFiles {
           if (!currentPath&&this.files.length===0) {
             return { done: true };
           }
-           
           if(this.files.length <= 4 && currentPath) {
             await this.readDir(currentPath);
           }
