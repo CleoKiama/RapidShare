@@ -16,6 +16,7 @@ module.exports = [
       },
     },
   },
+  
   {
     test: /\.jsx?$/,
     use: {

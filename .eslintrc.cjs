@@ -2,8 +2,9 @@ module.exports = {
   env: {
     es2021: true,
     node: true,
+    browser : true,
   },
-  extends: "eslint:recommended",
+  extends: ["eslint:recommended","plugin:react/recommended"],
   overrides: [
     {
       env: {
@@ -22,6 +23,13 @@ module.exports = {
     ecmaVersion: "latest",
     sourceType: "module",
   },
+  plugins : [
+      "react",
+      "promise",
+      "node",
+      "react-hooks",
+      "tailwindcss",
+  ],
   rules: {
     "jest/no-disabled-tests": "warn",
     "jest/no-focused-tests": "error",
