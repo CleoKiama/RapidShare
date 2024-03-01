@@ -42,14 +42,10 @@ export default function createMulticastListener() {
         const defaultPeerPort = 3000
         console.log(c.blue(`received message from multicast: ${msg}`))
         console.log(c.yellow(`adr ${rinfo.address} : port => ${rinfo.port}`))
-       console.log(c.magenta(`sending back a reply...`))
+        console.log(c.magenta(`sending back a reply...`))
         const thisDeviceDetails = JSON.stringify(getThisDeviceDetails())
         const deviceFound = JSON.parse(msg.toString())
-        const deviceFoundDetails = {
-            ...deviceFound,
-            address: rinfo.address,
-            port: defaultPeerPort,
-        }
+        
         server.send(thisDeviceDetails, rinfo.port, rinfo.address, (error) => {
             if (error) {
                 console.error(
@@ -58,7 +54,12 @@ export default function createMulticastListener() {
             }
         })
         if(broadCastEnded) {
-          addDevice(deviceFoundDetails) && foundDevices.emit("deviceFound",foundDevices)
+          const deviceFoundDetails = {
+            ...deviceFound,
+            address: rinfo.address,
+            port: defaultPeerPort,
+        }
+        addDevice(deviceFoundDetails) && foundDevices.emit("deviceFound",foundDevices)
         }
     })
     return server

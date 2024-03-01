@@ -1,9 +1,10 @@
 const config = {
     transform: {
-      "^.+\\.(t|j)sx?$": "@swc/jest",
+        '^.+\\.(t|j)sx?$': '@swc/jest',
     },
-    testPathIgnorePatterns: ["/node_modules/"],
-  };
+    testEnvironment: 'jest-environment-jsdom',
+    testPathIgnorePatterns: ['/node_modules/'],
+    setupFilesAfterEnv: ['<rootDir>/setupJestDom.js'],
+}
 
-
-  export default config
+export default config
