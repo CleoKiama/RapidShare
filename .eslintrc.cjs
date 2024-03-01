@@ -11,7 +11,7 @@ module.exports = {
         node: true,
         "jest/globals": true,
       },
-      files: [".eslintrc.{js,cjs}", "test/**"],
+      files: [".eslintrc.{js,cjs}", "**/test/**"],
       plugins: ["jest"],
       extends: ["plugin:jest/recommended"],
       parserOptions: {

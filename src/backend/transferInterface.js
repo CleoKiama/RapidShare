@@ -7,10 +7,10 @@ import { createReadStream } from "node:fs";
 import identifyPath from "./pathType.js";
 import { createPacket } from "./multiplexer.js";
 import { createServer, createConnection } from "net";
-import createMulticastServer from "./multicastListener.js";
+import createMulticastListener from "./multicastListener.js";
 
 // !! might need to close the multicastServer for the terminal version when done I guess
-export const multicastServer = createMulticastServer();
+export const multicastServer = createMulticastListener();
 
 const address = thisMachineAddress();
 const port = 3000;
