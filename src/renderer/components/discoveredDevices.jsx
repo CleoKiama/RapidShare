@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from 'react'
 import Device from './device.jsx'
 
+
+
 function DiscoveredDevices() {
     const [deviceData, setDeviceData] = useState()
     useEffect(() => {
-        function listen(data) {
-            setDeviceData(data)
+        function listen(event,data) {
+           setDeviceData(data)
         }
         window.electron.on('deviceFound', listen)
         return () => {
@@ -26,7 +28,7 @@ function DiscoveredDevices() {
             />
         )
     })
-    return <div>{devices}</div>
+    return <div className="grid grid-cols-1 divide-y-2 justify-between  mt-6 ">{devices}</div>
 }
 
 export default DiscoveredDevices

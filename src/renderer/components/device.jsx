@@ -1,9 +1,10 @@
 import React from 'react'
+import clsx from 'clsx';
 import PropTypes from 'prop-types'
-
 function Device({ isCurrentDevice, userName ,platform}) {
+
     return (
-        <div className="flex flex-row items-center  ">
+        <div className={clsx("flex flex-row items-center",!isCurrentDevice&&"py-6")}>
             <img
                 src={`static://assets/${platform}_logo.svg`}
                 className="h-10 w-10"

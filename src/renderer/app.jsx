@@ -10,7 +10,7 @@ import DiscoveredDevices from './components/discoveredDevices.jsx'
 export default function App() {
            return (
         <ErrorBoundary fallbackRender={Fallback}>
-            <main className="mx-auto mt-4 h-[534px] w-[474px]  rounded-2xl bg-grey-200 px-6 py-4 ">
+            <main className="mx-auto mt-4 max-h-fit  w-[474px]  rounded-2xl bg-grey-200 px-6 py-4 ">
                 <Container>
                     <header>
                         <h1>RapidShare</h1>

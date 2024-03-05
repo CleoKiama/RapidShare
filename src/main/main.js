@@ -2,13 +2,15 @@ import { app, BrowserWindow, session } from 'electron'
 import { join } from 'path'
 import { platform } from 'process'
 import respondWithDeviceInfo from '../backend/deviceInfo.js'
-// Handle creating/removing shortcuts on Windows when installing/uninstalling.
+import onDeviceFound from '../backend/deviceDiscovery.js'
+import Main from '../backend/main.js'
+
 if (require('electron-squirrel-startup')) {
     app.quit()
 }
 
+var webContents
 const createWindow = () => {
-    // Create the browser window.
     const mainWindow = new BrowserWindow({
         width: 800,
         height: 600,
@@ -20,6 +22,7 @@ const createWindow = () => {
     mainWindow.loadURL(MAIN_WINDOW_WEBPACK_ENTRY)
     //TODO  might need to remove this in production : Open the DevTools.
     mainWindow.webContents.openDevTools()
+    webContents = mainWindow.webContents
 }
 
 // This method will be called when Electron has finished
@@ -41,6 +44,8 @@ app.on('ready', () => {
         }
     )
     createWindow()
+    Main()
+    onDeviceFound(webContents)
 })
 
 // Quit when all windows are closed, except on macOS. There, it's common

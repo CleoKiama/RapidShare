@@ -3,33 +3,20 @@ import { type, userInfo } from 'os'
 import c from 'ansi-colors'
 import { clearInterval } from 'timers'
 import thisMachineAddress from './currentAssignedAddress.js'
-import EventEmitter from 'events'
+import {addDevice,deviceDiscovery,foundDevices } from './deviceDiscovery.js'
 import {
     bindingPort as multicastAdrPort,
     multicastAddress,
 } from './multicastListener.js'
 
-export const deviceDiscovery = new EventEmitter()
 export const broadCastUdp = dgram.createSocket('udp4')
-export let foundDevices = { devices: [] }
 
-export function addDevice(deviceInfo) {
-    let deviceFound = false
-    foundDevices.devices.forEach((device) => {
-        if (device.address === deviceInfo.address) return (deviceFound = true)
-    })
-    if (!deviceFound) {
-        foundDevices.devices.push(deviceInfo)
-        return true
-    }
-    return false
-}
-broadCastUdp.on('error', (error) => {
-    console.error(error.message)
+export default function startBroadCaster () {
+ broadCastUdp.on('error', (error) => {
     broadCastUdp.close()
-    process.exit(1)
+    throw error
 })
-function sendUserData() {
+const sendUserData = () => {
     const deviceDetails = {
         ...userInfo(),
         platform: type(),
@@ -41,7 +28,7 @@ function sendUserData() {
         }
     })
 }
-function broadCastDevice() {
+const  broadCastDevice = () => {
     const broadCastInterval = setInterval(() => {
         if (foundDevices.devices.length > 0) {
             clearInterval(broadCastInterval)
@@ -77,5 +64,7 @@ broadCastUdp.on('message', (msg, rinfo) => {
     }
     console.log(c.yellow(`broadCaster received message from device below .. `))
     if (addDevice(deviceFoundInfo))
-        return deviceDiscovery.emit('deviceFound', foundDevices)
+    return deviceDiscovery.emit('deviceFound', foundDevices)
 })
+   
+}

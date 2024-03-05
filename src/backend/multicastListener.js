@@ -2,9 +2,9 @@ import dgram from 'dgram'
 import c from 'ansi-colors'
 import { type, userInfo } from 'os'
 import thisMachineAddress from './currentAssignedAddress.js'
-import { deviceDiscovery, addDevice,foundDevices } from './broadCast.js'
+import { deviceDiscovery, addDevice,foundDevices } from './deviceDiscovery.js'
 
-//returns the multicast server for clean up and closing
+
 const bindingPort = 8080
 const multicastAddress = '239.1.1.1'
 
