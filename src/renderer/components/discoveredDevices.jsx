@@ -1,22 +1,23 @@
 import React, { useEffect, useState } from 'react'
 import Device from './device.jsx'
 
-
-
 function DiscoveredDevices() {
     const [deviceData, setDeviceData] = useState()
     useEffect(() => {
-        function listen(event,data) {
-           setDeviceData(data)
+        function listen(event, data) {
+            setDeviceData(data)
         }
         window.electron.on('deviceFound', listen)
+        window.electron .on('foundDevicesUpdate', listen)
+        window.electron.on('foundDevicesUpdate',listen)
         return () => {
             window.electron.removeListener('deviceFound', listen)
+            window.electron.removeListener('foundDevicesUpdate', listen)
         }
     }, [])
     if (!deviceData) {
         // ** can render something else until a device is discovered
-        return  <></>
+        return <></>
     }
     const devices = deviceData.devices.map((device) => {
         return (
@@ -28,7 +29,11 @@ function DiscoveredDevices() {
             />
         )
     })
-    return <div className="grid grid-cols-1 divide-y-2 justify-between  mt-6 ">{devices}</div>
+    return (
+        <div className="mt-6 grid grid-cols-1 justify-between  divide-y-2 ">
+            {devices}
+        </div>
+    )
 }
 
 export default DiscoveredDevices

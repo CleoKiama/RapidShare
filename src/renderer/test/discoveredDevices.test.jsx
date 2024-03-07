@@ -2,8 +2,8 @@ import React from 'react'
 import { render } from '@testing-library/react'
 import DiscoveredDevices from '../components/discoveredDevices.jsx'
 import { EventEmitter } from 'node:events'
-
-const foundDevices = {
+import { setTimeout as setTimeoutPromise } from 'node:timers/promises'
+let foundDevices = {
     devices: [
         {
             uid: 1000,
@@ -71,8 +71,15 @@ const foundDevices = {
 test('renders all the discovered devices', async () => {
     const device = new EventEmitter()
     setTimeout(() => {
-        device.emit('deviceFound', foundDevices)
-    }, 200)
+        device.emit(
+            'deviceFound',
+            {
+                eventId: '79374375835730',
+            },
+            foundDevices
+        )
+    }, 300)
+
     window.electron = {
         on: (channel, callback) => {
             device.on(channel, callback)
@@ -90,4 +97,47 @@ test('renders all the discovered devices', async () => {
         )
     })
     expect(deviceLogos).toHaveLength(foundDevices.devices.length)
+})
+
+test('updates when a device goes offline', async () => {
+    const device = new EventEmitter()
+    var onlineDevices = { devices: [] }
+    setTimeout(() => {
+        device.emit(
+            'deviceFound',
+            {
+                eventId: '79374375835730',
+            },
+            foundDevices
+        )
+    }, 200)
+
+    window.electron = {
+        on: (channel, callback) => {
+            device.on(channel, callback)
+        },
+        removeListener: (channel, fn) => {
+            device.removeListener(channel, fn)
+        },
+    }
+     await setTimeoutPromise(700)
+    onlineDevices.devices = foundDevices.devices.slice(0, 3)
+    setTimeout(function () {
+        device.emit(
+            'foundDevicesUpdate',
+            {
+                eventId: '79374375835730',
+            },
+            onlineDevices
+        )
+    },200)
+    const { findAllByAltText } = render(<DiscoveredDevices />)
+    const deviceLogos = await findAllByAltText(/platform/i)
+    deviceLogos.forEach((img, index) => {
+        expect(img).toHaveAttribute(
+            'src',
+            `static://assets/${onlineDevices.devices[index].platform}_logo.svg`
+        )
+    })
+    expect(deviceLogos).toHaveLength(onlineDevices.devices.length)
 })

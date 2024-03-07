@@ -9,7 +9,7 @@ if (require('electron-squirrel-startup')) {
     app.quit()
 }
 
-var webContents
+export var webContents
 const createWindow = () => {
     const mainWindow = new BrowserWindow({
         width: 800,
