@@ -2,8 +2,6 @@ import os from 'os'
 import { ipcMain } from 'electron'
 
 
-
-
 export default function respondWithDeviceInfo() {
     
     ipcMain.handle('thisDevice', () => {

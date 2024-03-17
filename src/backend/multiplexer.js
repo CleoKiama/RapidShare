@@ -2,6 +2,7 @@ import createStreamSources from './createFileStreams.js'
 import GenerateFiles from './generateFiles.js'
 import path from 'path'
 import c from 'ansi-colors'
+import { once } from 'node:events'
 
 export function createPacket(path, chunk) {
     if (chunk === null) {
@@ -46,7 +47,6 @@ export default async function multiplexer(rootPath, destination) {
         return Promise.reject(error)
     }
     console.log(c.yellow('multiplexer all done ending the socket now'))
-    if (destination.writable) return destination.end()
 }
 const sendEmptyDirPacket = async (rootPath, emptyDirPath, destination) => {
     let relativePath
@@ -55,16 +55,10 @@ const sendEmptyDirPacket = async (rootPath, emptyDirPath, destination) => {
     // ** as in no files but may have other nested Empty Dirs
     if (emptyDirPath === rootPath) relativePath = basename
     else relativePath = `${basename}${emptyDirPath.substring(rootPath.length)}`
-    return new Promise((resolve, reject) => {
-        let drain = destination.write(
-            createPacket(relativePath, null),
-            (err) => {
-                if (err) return reject(err)
-            }
-        )
-        if (drain) return resolve()
-        destination.once('drain', resolve)
+    let drain = destination.write(createPacket(relativePath, null), (err) => {
+        if (err) return Promise.reject(err)
     })
+    if (!drain) return await once(destination, 'drain')
 }
 
 async function sendPacket(rootPath, files, destination) {
@@ -86,21 +80,38 @@ async function sendPacket(rootPath, files, destination) {
             if (!currentPath) return
             const basename = path.basename(rootPath)
             const relativePath = `/${basename}${currentPath.substring(rootPath.length)}`
-            currentSource.on('readable', async function () {
+            currentSource.on('readable', function () {
                 let chunk
-                while ((chunk = this.read()) !== null) {
-                    //TODO handle drain here please
-                    let drain = destination.write(
-                        createPacket(relativePath, chunk),
-                        (err) => {
-                            if (err) return reject(err)
-                        }
-                    )
-                    if (!drain) console.log(c.magentaBright(`waiting for drain event`))
-                    return await new Promise((done) => {
-                        destination.once('drain', done)
-                    })
+                let drainListener
+                const awaitDrain = () => {
+                    if (drainListener) {
+                        destination.removeListener('drain', drainListener)
+                    }
+
+                     drainListener = () => {
+                        console.log(c.green("resuming sending after the drain event fired"))
+                        readAndSend()
+                        drainListener = null // Reset the listener
+                    }
+                    destination.once('drain', drainListener)
                 }
+                const readAndSend = () => {
+                    while ((chunk = this.read()) !== null) {
+                        //TODO handle drain here please
+                        let drain = destination.write(
+                            createPacket(relativePath, chunk),
+                            (err) => {
+                                if (err) return reject(err)
+                            }
+                        )
+                        if (!drain) {
+                            awaitDrain()
+                            console.log(c.red("waiting for draining"))
+                            break
+                        }
+                    }
+                }
+                readAndSend()
             })
             currentSource.once('error', (err) => {
                 console.error(

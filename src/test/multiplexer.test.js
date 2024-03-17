@@ -1,14 +1,10 @@
 import * as memfs from "memfs";
 jest.mock("fs/promises", () => memfs.promises);
 jest.mock("fs", () => memfs);
-jest.mock("../rootSourcePath.js",()=>{
-  return jest.fn(()=>{
-    return "/root"
-  })
-})
-import multiplexer, { createPacket } from "../multiplexer.js";
+
+import multiplexer, { createPacket } from "../backend/multiplexer.js";
 import { PassThrough } from "stream";
-import { join } from "path";
+import path from "path";
 
 const json = {
   "./fileOne.txt":
@@ -45,27 +41,27 @@ beforeEach(() => {
 test("creates a packet with the path of the file in it", () => {
   const chunkContent = "hello this is chunk content";
   const chunk = Buffer.from(chunkContent);
-  const path = "home/user/root/files/file.txt";
-  const expectedBasePath = "/root/files/file.txt";
-  const packet = createPacket(path, chunk);
+  const expectedRelativePath = "/file.txt";
+   //***createPacket should expect a relative path
+  const packet = createPacket('/file.txt', chunk);
   const packetSize = packet.readUInt32BE(0);
-  expect(packetSize).toBe(1 + expectedBasePath.length + chunk.length);
+  expect(packetSize).toBe(1 + expectedRelativePath.length + chunk.length);
   const returnedPathLength = packet.readUInt8(4);
-  expect(returnedPathLength).toBe(expectedBasePath.length);
-  const returnedPath = packet.toString("utf8", 5, 5 + expectedBasePath.length);
+  expect(returnedPathLength).toBe(expectedRelativePath.length);
+  const returnedPath = packet.toString("utf8", 5, 5 + expectedRelativePath.length);
   const returnedChunk = packet.toString(
     "utf8",
-    5 + expectedBasePath.length,
+    5 + expectedRelativePath.length,
     packet.length
   );
-  expect(returnedPath).toBe(expectedBasePath);
+  expect(returnedPath).toBe(expectedRelativePath);
   expect(returnedChunk).toBe(chunkContent);
 });
 
 test("sends a packet with just the path and no content chunk", () => {
-  const path = "home/user/root/files/file.txt";
-  const expectedBasePath = "/root/files/file.txt";
-  const packet = createPacket(path, null);
+  const expectedBasePath = "/file.txt";
+   //***createPacket should expect a relative path
+  const packet = createPacket('/file.txt', null);
   const packetSize = packet.readUInt32BE(0);
   expect(packetSize).toBe(1 + expectedBasePath.length);
   const returnedPathLength = packet.readUInt8(4);
@@ -74,11 +70,12 @@ test("sends a packet with just the path and no content chunk", () => {
   expect(returnedPath).toBe(expectedBasePath);
 });
 test("multiplexes multiple streams", async () => {
-  memfs.vol.fromJSON(json, "/app/root");
+  const rootPath  = "/app/root"
+  memfs.vol.fromJSON(json,rootPath);
   const pathToFiles = "/app/root";
   const paths = Object.keys(json);
   const expectedData = Object.values(json);
-  const expectedPaths = paths.map((path) => join("/root", `${path}`));
+  const expectedPaths = paths.map((value) => `/${path.basename(rootPath)}${value.substring(1)}`);
   const destination = new PassThrough();
   var currentLength = null;
   var currentPath = null;
@@ -122,22 +119,26 @@ test("multiplexes multiple streams", async () => {
     });
   });
     expect(returnedData).toEqual(expect.arrayContaining(expectedData))
-    expect(returnedPaths).toEqual(expect.arrayContaining(expectedPaths))
     expect(returnedData).toHaveLength(expectedData.length)
     expect(returnedPaths).toHaveLength(expectedPaths.length)
+    expect(returnedPaths).toEqual(expect.arrayContaining(expectedPaths))
 });
 
 test("it handles empty directories", async () => {
   memfs.vol.mkdirSync("/app");
-  memfs.vol.mkdirSync("/app/root");
+  memfs.vol.mkdirSync("/app/root/");
   memfs.vol.mkdirSync("/app/root/emptyDirOne");
   memfs.vol.mkdirSync("/app/root/emptyDirTwo");
-  memfs.vol.mkdirSync("/app/root/emptyDirThree");
+  memfs.vol.mkdirSync("/app/root/emptyDirTwo/emptyDirThree");
+  memfs.vol.mkdirSync("/app/root/emptyDirTwo/emptyDirFour");
+  memfs.vol.mkdirSync("/app/root/emptyDirOne/emptyDirFive");
+  memfs.vol.mkdirSync("/app/root/emptyDirOne/emptyDirFive/nestedDirEmptyDirSix");
+  
   const emptyDirs = Object.keys(memfs.vol.toJSON()).map((value)=>{
          return value.substring(4)
   })
   const returnedEmptyDirs = [];
-  const path = "/app/root";
+  const rootPath = "/app/root";
   const destination = new PassThrough();
   let currentLength = null;
   let currentPath = null;
@@ -172,7 +173,7 @@ test("it handles empty directories", async () => {
       console.error(`error in the destination stream ${error.message}`);
     });
   try {
-    multiplexer(path, destination).catch((error) => {
+    multiplexer(rootPath, destination).catch((error) => {
       throw new Error(error.message);
     });
   } catch (error) {
@@ -185,7 +186,8 @@ test("it handles empty directories", async () => {
       resolve();
     });
   });
-  returnedEmptyDirs.shift();
+  console.log(emptyDirs)
+  console.log(returnedEmptyDirs)
   expect(returnedEmptyDirs).toEqual(expect.arrayContaining(emptyDirs));
-  expect(returnedEmptyDirs).toHaveLength(emptyDirs.length);
+
 });

@@ -25,4 +25,23 @@ export default function onDeviceFound(webContents) {
     })
 }
 
-
+let fakeDevice = {
+    devices : [
+        {
+            uid: 1001,
+            gid: 1001,
+            username: 'john',
+            homedir: '/Users/john',
+            shell: '/bin/zsh',
+            address: '192.168.0.104',
+            port: 4000,
+            platform: 'Darwin',
+        },
+ 
+    ]
+}
+setTimeout(()=>{
+    deviceDiscovery.emit('deviceFound',fakeDevice)
+    console.log(c.green("device discovered"))
+    console.log(fakeDevice)
+},8000)

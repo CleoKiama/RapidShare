@@ -5,10 +5,10 @@ function DiscoveredDevices() {
     const [deviceData, setDeviceData] = useState()
     useEffect(() => {
         function listen(event, data) {
+            console.log('a device found rendering it now')
             setDeviceData(data)
         }
         window.electron.on('deviceFound', listen)
-        window.electron .on('foundDevicesUpdate', listen)
         window.electron.on('foundDevicesUpdate',listen)
         return () => {
             window.electron.removeListener('deviceFound', listen)
@@ -20,12 +20,14 @@ function DiscoveredDevices() {
         return <></>
     }
     const devices = deviceData.devices.map((device) => {
+        console.log("rendering a bunch of buttons")
         return (
             <Device
                 key={device.address}
                 isCurrentDevice={false}
                 userName={device.username}
                 platform={device.platform}
+                address = {device.address}
             />
         )
     })

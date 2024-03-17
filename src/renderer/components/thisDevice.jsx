@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
-import Device from './device.jsx'
 import Loader from './loader.jsx'
+
+
 
 export default function ThisDevice() {
     const [thisDevice, setThisDevice] = useState()
@@ -12,17 +13,25 @@ export default function ThisDevice() {
             setThisDeviceInfo(true)
         })
     })
+    
     return (
-        <div>
+        <>
             {!thisDevice? 
                 <Loader />
              : 
-                <Device
-                    isCurrentDevice={true}
-                    userName={thisDevice.userInfo.username}
-                    platform={thisDevice.type}
-                />
-            }
+        <div className="flex flex-row items-center " >
+             <img
+                src={`static://assets/${thisDevice.type}_logo.svg`}
+                className="h-10 w-10"
+                alt={`${thisDevice.type} platform logo`}
+            />
+            <div className="ml-6 flex flex-col">
+                    <p className="self-start text-sm text-gray-600">you</p>
+                <p>{thisDevice.userInfo.userName}</p>
+            </div>
+             
         </div>
+            }
+        </>
     )
 }

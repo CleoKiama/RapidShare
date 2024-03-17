@@ -1,10 +1,7 @@
-import { receiveMode } from './transferInterface.js';
-import c from 'ansi-colors'
-import validatePath from "./validatePath.js";
+import Demultiplexer from "./demultiplexer.js";
 
 
-  
-async function main () {
-  validatePath (process.argv[2])
-    await receiveMode ()
+
+export default async function startWrite (socket) {
+   await Demultiplexer(socket)
 }

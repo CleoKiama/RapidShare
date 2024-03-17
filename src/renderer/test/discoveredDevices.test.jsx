@@ -1,8 +1,9 @@
 import React from 'react'
-import { render } from '@testing-library/react'
+import { render,} from '@testing-library/react'
 import DiscoveredDevices from '../components/discoveredDevices.jsx'
 import { EventEmitter } from 'node:events'
 import { setTimeout as setTimeoutPromise } from 'node:timers/promises'
+
 let foundDevices = {
     devices: [
         {
@@ -120,7 +121,7 @@ test('updates when a device goes offline', async () => {
             device.removeListener(channel, fn)
         },
     }
-     await setTimeoutPromise(700)
+    await setTimeoutPromise(700)
     onlineDevices.devices = foundDevices.devices.slice(0, 3)
     setTimeout(function () {
         device.emit(
@@ -130,7 +131,7 @@ test('updates when a device goes offline', async () => {
             },
             onlineDevices
         )
-    },200)
+    }, 200)
     const { findAllByAltText } = render(<DiscoveredDevices />)
     const deviceLogos = await findAllByAltText(/platform/i)
     deviceLogos.forEach((img, index) => {
@@ -141,3 +142,4 @@ test('updates when a device goes offline', async () => {
     })
     expect(deviceLogos).toHaveLength(onlineDevices.devices.length)
 })
+

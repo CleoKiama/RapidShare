@@ -1,21 +1,14 @@
 import * as memfs from "memfs";
 jest.mock("fs/promises", () => memfs.promises);
-jest.mock("fs-extra", () => memfs);
+//jest.mock("fs-extra", () => memfs);
 jest.mock("fs", () => memfs);
 
 import fs from 'fs-extra'
-import Demultiplexer from "../demultiplexer.js";
-import multiplexer from "../multiplexer.js";
+import Demultiplexer from '../backend/demultiplexer.js'
+import multiplexer from "../backend/multiplexer.js";
 import { PassThrough } from "stream";
 import path from "path";
-jest.mock("../rootDestinationPath",()=>{
-  return jest.fn(()=>"/app/newVolume")
-})
-jest.mock("../rootSourcePath.js",()=>{
-  return jest.fn(()=>{
-    return "/oldVolume"
-  })
-})
+
 const json = {
   "./oldVolume/dirOne/fileOne.txt": "file one text content",
   "./oldVolume/fileFive.txt": "content of file five.txt",

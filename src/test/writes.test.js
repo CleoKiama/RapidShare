@@ -2,8 +2,9 @@ import { createReadStream } from "node:fs";
 import c from "ansi-colors";
 import fs from "fs-extra";
 import { Transform } from "node:stream";
-import Demultiplexer from "../demultiplexer.js";
-import formatBytes from "../formatBytes.js";
+import Demultiplexer from "../backend/demultiplexer.js";
+import formatBytes from "../backend/formatBytes.js";
+import {config} from '../backend/appConfig.js'
 
 function createPacket(path, chunk) {
   if (chunk === null) {
@@ -23,7 +24,9 @@ function createPacket(path, chunk) {
   return packet;
 }
 
-class packetCreator extends Transform {
+//add the name for the file to be tested here
+const fileName = "copy.jpg"
+class demuxInitializer extends Transform {
   constructor() {
     super();
     this.path = "/copy.jpg";
@@ -42,7 +45,7 @@ class packetCreator extends Transform {
 }
 beforeEach(async () => {
   try {
-    await fs.rm("/media/cleo/Library/copy.jpg");
+    await fs.rm(`${config.destinationPath}/${fileName}`);
   } catch (error) {
     console.error(
       c.blue("i think the file does not exist but it's fine anyway")
@@ -51,20 +54,20 @@ beforeEach(async () => {
 });
 
 test("reads and writes a full copy of a file", async () => {
-  const path = "/home/cleo/Pictures/BingWallpaper/four.jpg";
-  const destinationPath = "/media/cleo/Library/copy.jpg";
+  //Path to the fileName to test  that will be transferred
+  const path = "/home/cleo/Pictures/BingWallpaper/copy.jpg";
   const { size } = await fs.stat(path);
-  const packetCreatorInstance = new packetCreator();
-  const awaitDemux = Promise.resolve(Demultiplexer(packetCreatorInstance));
+  const demuxInitializerInstance = new demuxInitializer();
+  const awaitDemux = Promise.resolve(Demultiplexer(demuxInitializerInstance));
   const stream = createReadStream(path, {
     highWaterMark: 60 * 1024,
   });
-  stream.pipe(packetCreatorInstance).on("error", (err) => {
+  stream.pipe(demuxInitializerInstance).on("error", (err) => {
     console.error(c.red(`error piping to the transform ${err.message}`));
   });
   await awaitDemux;
-  const stat = await fs.stat(destinationPath);
-  const formatedBytes = formatBytes(stat.size);
+  const stat = await fs.stat(`${config.getDestinationPath()}/${fileName}`);
+  const formattedSize = formatBytes(stat.size);
   const finalSize = formatBytes(size)
-  expect(formatedBytes).toEqual(finalSize);
+  expect(formattedSize).toEqual(finalSize);
 });
