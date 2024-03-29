@@ -21,34 +21,34 @@ export default class GenerateFiles {
     if (foundFiles.length !== 0) {
       this.files.push(...foundFiles);
     } else this.emptyDirs.push(path);
-  
+
   }
   [Symbol.asyncIterator]() {
     let currentPath = this.path;
     return {
-      next: async () => { 
+      next: async () => {
         try {
-          if (!currentPath&&this.files.length===0) {
+          if (!currentPath && this.files.length === 0) {
             return { done: true };
           }
-          if(this.files.length <= 4 && currentPath) {
+          if (this.files.length <= this.concurrency && currentPath) {
             await this.readDir(currentPath);
           }
-          const subset = this.files.splice(0,4)
+          const subset = this.files.splice(0, this.concurrency)
           currentPath = this.remainingDirs.shift();
-           if(subset.length===0 ) {
-            let emptyDir =  this.emptyDirs.shift()
+          if (subset.length === 0) {
+            let emptyDir = this.emptyDirs.shift()
             return {
-              done: false, 
-              value : {
-                empty : true , 
-                path : emptyDir
+              done: false,
+              value: {
+                empty: true,
+                path: emptyDir
               }
             }
-           } 
-           return { done: false, value : subset };
+          }
+          return { done: false, value: subset };
         } catch (error) {
-           console.error(
+          console.error(
             `something went wrong reading the files and dirs ${error.message}`
           );
           return { done: true };

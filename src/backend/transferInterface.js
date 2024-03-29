@@ -8,26 +8,26 @@ export const address = thisMachineAddress()
 export const defaultClientListeningPort = 3000
 
 function startServer() {
-    const serverSocket = createServer({
-        keepAlive: true,
-    })
-    serverSocket.listen(
-        {
-            host: address,
-            port: defaultClientListeningPort,
-        },
-        () => {
-            console.log(
-                c.green(
-                    `tcp server ready on ${address} and ${defaultClientListeningPort}`
-                )
-            )
-        }
-    )
-    return serverSocket
+  const serverSocket = createServer({
+    keepAlive: true,
+  })
+  serverSocket.listen(
+    {
+      host: address,
+      port: defaultClientListeningPort,
+    },
+    () => {
+      console.log(
+        c.green(
+          `tcp server ready on ${address} and ${defaultClientListeningPort}`
+        )
+      )
+    }
+  )
+  return serverSocket
 }
 
-//export const server = startServer()
+export const server = startServer()
 
 //TODO should stop the pinging once a connection arrives but leave the multicast server online
 /* const connectionListener = (socket) => {

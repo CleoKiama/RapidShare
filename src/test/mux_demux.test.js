@@ -1,0 +1,80 @@
+import TransferProgress from '../backend/transferProgress.js'
+import Demultiplexer from '../backend/demultiplexer.js'
+import path from 'node:path'
+import formatBytes from '../backend/formatBytes.js'
+import fastFolderSize from 'fast-folder-size'
+import os from 'os'
+import fs from 'fs-extra'
+import { promisify } from 'node:util'
+import { PassThrough } from 'node:stream'
+import multiplexer from '../backend/multiplexer.js'
+import GetFilesSize from '../backend/readFilesSize.js'
+
+jest.mock("../backend/appConfig.js", () => {
+  return {
+    __esModule: true,
+    config: {
+      getDestinationPath: () => destinationPath
+    }
+  }
+})
+
+var updateUiSpy = jest.spyOn(TransferProgress, 'updateUi').mockImplementation(() => {
+  console.log('mocked')
+})
+
+var sourcePath = `${os.tmpdir()}/send`
+var destinationPath = `${os.tmpdir()}/username/Downloads`
+
+const json = {
+  "/dirOne/fileOne.txt": "file one text content",
+  "/fileFive.txt": "content of file five.txt",
+  "/fileSix.txt": "content of file six.txt here",
+  "/dirOne/dirTwo/fileFour.txt": "content of file four.txt",
+  "/dirOne/dirTwo/fileTwo.txt": "content of file two.txt",
+  "/dirOne/dirTwo/fileThree.txt": "content of file three.txt",
+  "/dirOne/dirTwo/fileEmpty.txt": "hello yeah",
+  "/dirOne/dirTwo/dirThree/fileSeven.txt": "content of file seven.txt",
+  "/dirOne/dirTwo/dirThree/fileEight.txt": "content of file eight.txt",
+  "/dirOne/dirTwo/dirThree/fileNine.txt": "content of file nine.txt",
+  "/dirOne/dirTwo/dirThree/fileTen.txt": "content of file ten.txt",
+  "/dirOne/dirTwo/dirThree/fileEleven.txt": "content of file eleven.txt",
+};
+
+beforeEach(() => {
+  fs.removeSync(sourcePath)
+  fs.removeSync((destinationPath))
+})
+beforeEach(() => {
+  fs.ensureDirSync(sourcePath)
+  let values = Object.values(json)
+  Object.keys(json).map((value, index) => {
+    fs.ensureFileSync(`${sourcePath}/${value}`)
+    fs.writeFileSync(`${sourcePath}/${value}`, values[index])
+  })
+})
+
+const getSize = async (rootPath) => {
+  if (!path.extname(rootPath)) {
+    const fastFolderSizeAsync = promisify(fastFolderSize)
+    let size = await fastFolderSizeAsync(rootPath)
+    return formatBytes(size)
+  }
+  let { size } = await fs.stat(rootPath)
+  return formatBytes(size)
+}
+
+
+test("mux and demux work and update the progress", async () => {
+  let sourceSize = await getSize(sourcePath)
+  let transferInterface = new PassThrough()
+  let demux = Demultiplexer(transferInterface)
+  let totalSize = await GetFilesSize(sourcePath)
+  TransferProgress.setTotalSize(totalSize)
+  await multiplexer(sourcePath, transferInterface)
+  transferInterface.end()
+  await demux
+  let finalsize = await getSize(destinationPath)
+  expect(finalsize).toBe(sourceSize)
+  expect(updateUiSpy).toHaveBeenCalledWith(expect.any(Number), expect.any(Number))
+})
