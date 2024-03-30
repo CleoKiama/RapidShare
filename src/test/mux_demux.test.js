@@ -10,6 +10,14 @@ import { PassThrough } from 'node:stream'
 import multiplexer from '../backend/multiplexer.js'
 import GetFilesSize from '../backend/readFilesSize.js'
 
+var updateUiSpy = jest.spyOn(TransferProgress, 'updateUi').mockImplementation(() => { })
+
+var setProgressSpy = jest.spyOn(TransferProgress, 'setProgress')
+
+var sourcePath = `${os.tmpdir()}/send`
+var destinationPath = `${os.tmpdir()}/username/Downloads`
+
+
 jest.mock("../backend/appConfig.js", () => {
   return {
     __esModule: true,
@@ -19,12 +27,6 @@ jest.mock("../backend/appConfig.js", () => {
   }
 })
 
-var updateUiSpy = jest.spyOn(TransferProgress, 'updateUi').mockImplementation(() => {
-  console.log('mocked')
-})
-
-var sourcePath = `${os.tmpdir()}/send`
-var destinationPath = `${os.tmpdir()}/username/Downloads`
 
 const json = {
   "/dirOne/fileOne.txt": "file one text content",
@@ -78,3 +80,31 @@ test("mux and demux work and update the progress", async () => {
   expect(finalsize).toBe(sourceSize)
   expect(updateUiSpy).toHaveBeenCalledWith(expect.any(Number), expect.any(Number))
 })
+
+
+describe("Updates the progress even for empty directories or files", () => {
+  let emptyDirSource = `${os.tmpdir()}/emptyDirTest`
+  beforeEach(() => {
+    fs.removeSync(emptyDirSource)
+    fs.removeSync((destinationPath))
+  })
+  beforeEach(() => {
+    fs.ensureDirSync(emptyDirSource)
+  })
+  it("updates the progress for empty dirs", async () => {
+    let initSize = await getSize(emptyDirSource)
+    expect(initSize).toBe('0 Bytes')
+    let transferInterface = new PassThrough()
+    let demux = Demultiplexer(transferInterface)
+    let sizeRead = await GetFilesSize(emptyDirSource)
+    TransferProgress.updateTotalSize(sizeRead)
+    await multiplexer(emptyDirSource, transferInterface)
+    transferInterface.end()
+    await demux
+    let finalsize = await getSize(`${destinationPath}/emptyDirTest`)
+    expect(finalsize).toBe(initSize)
+    expect(updateUiSpy).toHaveBeenCalledWith(expect.any(Number), expect.any(Number))
+    expect(setProgressSpy).toHaveBeenCalled()
+  })
+})
+

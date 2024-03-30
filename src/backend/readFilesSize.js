@@ -13,7 +13,7 @@ const getFileSize = async (path) => await fs.stat(path)
 
 async function GetFilesSize(path) {
   const { isDir } = await identifyPath(path)
-  if (isDir) return await getFolderSize()
+  if (isDir) return await getFolderSize(path)
   else return await getFileSize(path)
 }
 

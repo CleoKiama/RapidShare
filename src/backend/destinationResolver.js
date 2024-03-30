@@ -28,6 +28,7 @@ export default class DestinationResolver {
   }
 
   createFileIfNotExists(filePath) {
+    console.log(c.magenta(`writing empty dir ${filePath}`))
     return fs.ensureFileSync(filePath)
   }
 

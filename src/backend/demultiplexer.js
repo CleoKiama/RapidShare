@@ -26,10 +26,13 @@ export default async function Demultiplexer(source) {
     let pathLength = chunk.readUInt8(1)
     currentPath = chunk.toString('utf8', 2, 2 + pathLength)
     let contentBuffer = Buffer.alloc(chunk.length - pathLength - 2)
-    if (contentBuffer.length === 0) {
-      contentBuffer = null
-    } else chunk.copy(contentBuffer, 0, 2 + pathLength, chunk.length)
-    TransferProgress.updateUi(progress, contentBuffer.length)
+    if ('length' in contentBuffer)
+      if (contentBuffer.length === 0) {
+        contentBuffer = null
+      } else chunk.copy(contentBuffer, 0, 2 + pathLength, chunk.length)
+    if (contentBuffer) {
+      TransferProgress.updateUi(progress, contentBuffer.length)
+    } else TransferProgress.updateUi(progress, 0)
     pendingWriteOprations += 1
     DestinationResolverInstance.saveToFileSystem(currentPath, contentBuffer).then(() => pendingWriteOprations -= 1)
     currentLength = null

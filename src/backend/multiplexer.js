@@ -54,7 +54,7 @@ const sendEmptyDirPacket = async (rootPath, emptyDirPath, destination) => {
   // ** as in no files but may have other nested Empty Dirs
   if (emptyDirPath === rootPath) relativePath = basename
   else relativePath = `${basename}${emptyDirPath.substring(rootPath.length)}`
-  let progress = 40
+  let progress = TransferProgress.setProgress(0)
   let drain = destination.write(createPacket(relativePath, null, progress), (err) => {
     if (err) return Promise.reject(err)
   })
