@@ -1,4 +1,4 @@
-import { readdir } from "fs/promises";
+import fs from "fs-extra";
 
 export default class GenerateFiles {
   constructor(basePath, concurrency) {
@@ -10,7 +10,7 @@ export default class GenerateFiles {
   }
   async readDir(path) {
     const foundFiles = [];
-    const found = await readdir(path, { withFileTypes: true });
+    const found = await fs.readdir(path, { withFileTypes: true });
     for (const dirent of found) {
       if (dirent.isFile()) {
         foundFiles.push(`${path}/${dirent.name}`);

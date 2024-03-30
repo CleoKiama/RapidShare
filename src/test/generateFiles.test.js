@@ -1,6 +1,6 @@
 import * as memfs from "memfs";
 import c from 'ansi-colors'
-import GenerateFiles from "../generateFiles.js";
+import GenerateFiles from "../backend/generateFiles.js";
 
 jest.mock("fs-extra", () => memfs.promises);
 
@@ -14,7 +14,7 @@ const json = {
   "./dirOne/dirTwo/dirThree/fileSix.txt": "Testing nested fileSix",
   "./dirOne/dirTwo/dirThree/fileSeven.md": "Another nested fileSeven",
   "./dirOne/dirTwo/dirThree/dirFour/fileEight.txt": "Even deeper fileEight",
- "./dirOne/dirTwo/dirThree/dirFour/fileNine.md": "Deeper fileNine",
+  "./dirOne/dirTwo/dirThree/dirFour/fileNine.md": "Deeper fileNine",
   "./dirOne/fileTen.txt": "Tenth file content",
   "./dirOne/fileEleven.md": "Eleventh file content",
   "./fileTwelve.txt": "Twelfth file content",
@@ -40,9 +40,9 @@ test("it generates four file paths at time", async () => {
   const originalFiles = Object.keys(json).map(
     (path) => `/app${path.substring(1)}`
   );
-  const generate = new GenerateFiles(path);
+  const generate = new GenerateFiles(path, 4);
   for await (const files of generate) {
-    if(files.length===0) {
+    if (files.length === 0) {
       console.log(c.red(`in this instance the files array is empty`))
     }
     foundFiles.push(...files);
@@ -60,30 +60,30 @@ test("handles empty directories and returns the path", async () => {
   memfs.vol.mkdirSync("/app/emptyDirOne");
   memfs.vol.mkdirSync("/app/emptyDirTwo");
   memfs.vol.mkdirSync("/app/emptyDirThree");
-  const path = "/app";  
+  const path = "/app";
   let emptyDirs = Object.keys(memfs.vol.toJSON())
-   const foundEmptyDirs = []
-  const generate = new GenerateFiles(path);
+  const foundEmptyDirs = []
+  const generate = new GenerateFiles(path, 4);
   for await (const dirent of generate) {
     foundEmptyDirs.push(dirent.path)
     expect(dirent.empty).toBe(true)
   }
-   foundEmptyDirs.shift()
-   expect(emptyDirs).toEqual(expect.arrayContaining(foundEmptyDirs))
-   expect(foundEmptyDirs).toHaveLength(emptyDirs.length)
+  foundEmptyDirs.shift()
+  expect(emptyDirs).toEqual(expect.arrayContaining(foundEmptyDirs))
+  expect(foundEmptyDirs).toHaveLength(emptyDirs.length)
 
-}); 
-test('handles one empty Directory',async ()=>{
+});
+test('handles one empty Directory', async () => {
   memfs.vol.mkdirSync("/app");
-   const path = '/app' ; 
-   let emptyDirs = Object.keys(memfs.vol.toJSON())
-   const foundEmptyDir = []
-   const generate = new GenerateFiles(path);
-   let hasPropertyEmpty = false
+  const path = '/app';
+  let emptyDirs = Object.keys(memfs.vol.toJSON())
+  const foundEmptyDir = []
+  const generate = new GenerateFiles(path, 4);
+  let hasPropertyEmpty = false
   for await (const dirent of generate) {
-    if(Object.hasOwn(dirent, 'empty')) {
-      hasPropertyEmpty  = true
-    } 
+    if (Object.hasOwn(dirent, 'empty')) {
+      hasPropertyEmpty = true
+    }
     foundEmptyDir.push(dirent.path)
     expect(dirent.empty).toBe(true)
   }

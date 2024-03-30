@@ -2,7 +2,7 @@ import c from 'ansi-colors'
 import userEvent from '@testing-library/user-event'
 import React from 'react'
 import { render, waitFor } from '@testing-library/react'
-import DiscoveredDevices from '../components/discoveredDevices.js'
+import DiscoveredDevices from '../components/discoveredDevices.jsx'
 import { EventEmitter } from 'node:events'
 import { setTimeout as setTimeoutPromise } from 'node:timers/promises'
 

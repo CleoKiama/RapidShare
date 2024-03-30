@@ -3,9 +3,9 @@ import * as memfs from "memfs";
 jest.mock("fs", () => memfs);
 jest.mock("fs/promises", () => memfs.promises);
 
-import createStreamSources from "../createFileStreams.js";
+import createStreamSources from "../backend/createFileStreams.js";
 import lazystream from "lazystream";
-import GenerateFiles from "../generateFiles.js";
+import GenerateFiles from "../backend/generateFiles.js";
 const json = {
   "./README.md": "read me",
   "./src/index.js": "2",
@@ -21,8 +21,8 @@ test("createStreamSources should return an array of readable streams", async () 
   const pathToFiles = "/app";
   const files = [];
   let dirsLength = Object.keys(json).length;
-  for await (const foundFiles of new GenerateFiles(pathToFiles)) {
-    if(Object.hasOwn(foundFiles,'empty')) continue  
+  for await (const foundFiles of new GenerateFiles(pathToFiles, 4)) {
+    if (Object.hasOwn(foundFiles, 'empty')) continue
     files.push(...foundFiles);
   }
   expect(files).toHaveLength(dirsLength);
