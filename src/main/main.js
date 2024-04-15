@@ -1,11 +1,12 @@
-import { app, BrowserWindow , session } from 'electron'
+import { app, BrowserWindow, session } from 'electron'
 import { join } from 'path'
 import { platform } from 'process'
 import respondWithDeviceInfo from '../backend/deviceInfo.js'
 import WindowAndListenerSetup from '../backend/mainWindowSetup.js'
+import Main from '../backend/main.js'
 
 if (require('electron-squirrel-startup')) {
-    app.quit()
+  app.quit()
 }
 const mainWindow = new WindowAndListenerSetup()
 // This method will be called when Electron has finished
@@ -13,41 +14,41 @@ const mainWindow = new WindowAndListenerSetup()
 // Some APIs can only be used after this event occurs.
 //content
 app.on('ready', () => {
-    respondWithDeviceInfo()
-    session.defaultSession.protocol.registerFileProtocol(
-        'static',
-        (request, callback) => {
-            const fileUrl = request.url.replace('static://', '')
-            const filePath = join(
-                app.getAppPath(),
-                '.webpack/renderer',
-                fileUrl
-            )
-            callback(filePath)
-        }
-    )
-     mainWindow.createWindow()
-     mainWindow.onDeviceFound()
-     mainWindow.openFileDialogListener()
-    //TODO Enable main backend functionality
-    //Main()
+  respondWithDeviceInfo()
+  session.defaultSession.protocol.registerFileProtocol(
+    'static',
+    (request, callback) => {
+      const fileUrl = request.url.replace('static://', '')
+      const filePath = join(
+        app.getAppPath(),
+        '.webpack/renderer',
+        fileUrl
+      )
+      callback(filePath)
+    }
+  )
+  mainWindow.createWindow()
+  mainWindow.onDeviceFound()
+  mainWindow.openFileDialogListener()
+  //TODO Enable main backend functionality
+  //Main()
 })
 
 // Quit when all windows are closed, except on macOS. There, it's common
 // for applications and their menu bar to stay active until the user quits
 // explicitly with Cmd + Q.
 app.on('window-all-closed', () => {
-    if (platform !== 'darwin') {
-        app.quit()
-    }
+  if (platform !== 'darwin') {
+    app.quit()
+  }
 })
 
 app.on('activate', () => {
-    // On OS X it's common to re-create a window in the app when the
-    // dock icon is clicked and there are no other windows open.
-    if (BrowserWindow.getAllWindows().length === 0) {
-        mainWindow.createWindow()
-    }
+  // On OS X it's common to re-create a window in the app when the
+  // dock icon is clicked and there are no other windows open.
+  if (BrowserWindow.getAllWindows().length === 0) {
+    mainWindow.createWindow()
+  }
 })
 
 // In this file you can include the rest of your app's specific main process

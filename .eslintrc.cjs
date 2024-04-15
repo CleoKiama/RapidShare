@@ -2,9 +2,9 @@ module.exports = {
   env: {
     es2021: true,
     node: true,
-    browser : true,
+    browser: true,
   },
-  extends: ["eslint:recommended","plugin:react/recommended"],
+  extends: ["eslint:recommended", "plugin:react/recommended"],
   overrides: [
     {
       env: {
@@ -23,12 +23,12 @@ module.exports = {
     ecmaVersion: "latest",
     sourceType: "module",
   },
-  plugins : [
-      "react",
-      "promise",
-      "node",
-      "react-hooks",
-      "tailwindcss",
+  plugins: [
+    "react",
+    "promise",
+    "node",
+    "react-hooks",
+    "tailwindcss",
   ],
   rules: {
     "jest/no-disabled-tests": "warn",
@@ -36,6 +36,7 @@ module.exports = {
     "jest/no-identical-title": "error",
     "jest/prefer-to-have-length": "warn",
     "jest/valid-expect": "error",
+    // "no-console" : "error"
   },
 };
 

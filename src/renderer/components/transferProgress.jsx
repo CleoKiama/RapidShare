@@ -15,7 +15,6 @@ export default function TransferProgress() {
           bytesTransferred: progress.bytesTransferred
         }
       })
-      console.log(progress)
     }
     window.electron.on("fileProgress", listener)
     return () => window.electron.removeListener("fileTransfer", listener)

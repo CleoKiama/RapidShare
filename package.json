@@ -2,7 +2,6 @@
   "name": "RapidShare",
   "productName": "RapidShare",
   "version": "1.0.0",
-  "type"  : "module",
   "description": "My Electron application description",
   "main": ".webpack/main",
   "scripts": {
@@ -11,7 +10,7 @@
     "make": "electron-forge make",
     "publish": "electron-forge publish",
     "lint": "echo \"No linting configured\"",
-    "test": "jest --watchAll"
+    "test": "jest --watchAll "
   },
   "devDependencies": {
     "@babel/core": "^7.23.9",

@@ -9,7 +9,6 @@ import { PassThrough } from 'stream'
 import path from 'path'
 
 jest.spyOn(TransferProgress, "updateUi").mockImplementation(() => {
-  console.log('mock implementation called')
 })
 jest.spyOn(TransferProgress, "setProgress").mockImplementation(() => {
   TransferProgress.updateUi(40, 140)
@@ -75,7 +74,6 @@ test('multiplexes multiple streams', async () => {
       return null
     }
     let progress = chunk.readUInt8(0)
-    console.log(progress)
     let pathLength = chunk.readUInt8(1)
     currentPath = chunk.toString('utf8', 2, 2 + pathLength)
     const returnedChunk = chunk.toString(
@@ -167,6 +165,5 @@ test('it handles empty directories', async () => {
     '/root/emptyDirTwo/emptyDirThree',
     '/root/emptyDirOne/emptyDirFive/nestedDirEmptyDirSix',
   ]
-  console.log(returnedEmptyDirs)
   expect(returnedEmptyDirs).toEqual(expectedDirs)
 })

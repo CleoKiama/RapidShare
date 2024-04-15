@@ -1,23 +1,13 @@
 import React, { useEffect, useState } from 'react'
 import Device from './device.jsx'
+import ChooseFile from './chooseFile.jsx'
 
-let initialData = {
-  devices: [
-    {
-      uid: 1001,
-      gid: 1001,
-      username: 'john',
-      homedir: '/Users/john',
-      shell: '/bin/zsh',
-      address: '192.168.0.104',
-      port: 4000,
-      platform: 'Darwin'
-    }
-  ]
-}
 
 function DiscoveredDevices() {
-  const [deviceData, setDeviceData] = useState(initialData)
+  // TODO remember to remove the initual data here when done with the ui
+  const [deviceData, setDeviceData] = useState()
+  const [deviceSelected, setDeviceSelected] = useState()
+  const [isSelected, setIsSelected] = useState(false)
   useEffect(() => {
     function listen(_, data) {
       setDeviceData(data)
@@ -29,6 +19,18 @@ function DiscoveredDevices() {
       window.electron.removeListener('foundDevicesUpdate', listen)
     }
   }, [])
+  const handleNavigationBack = () => {
+    setIsSelected(false)
+  }
+  const handleDeviceClick = (address) => {
+    for (const device of deviceData.devices) {
+      if (device.address === address) {
+        setDeviceSelected(<ChooseFile handleClick={handleNavigationBack} address={address} deviceName={device.username} />)
+        setIsSelected(true)
+        break;
+      }
+    }
+  }
   if (!deviceData) {
     // ** can render something else until a device is discovered
     return <></>
@@ -40,12 +42,17 @@ function DiscoveredDevices() {
         userName={device.username}
         platform={device.platform}
         address={device.address}
+        handleClick={handleDeviceClick}
       />
     )
   })
   return (
     <div className="mt-6 grid grid-cols-1 justify-between  divide-y-2 ">
-      {devices}
+      {
+        isSelected ? deviceSelected
+          :
+          devices
+      }
     </div>
   )
 }

@@ -28,7 +28,6 @@ class TransferProgress {
     this.totalSize = size
   }
   updateUi(percentageProgress, bytesTransferred) {
-
     this.webContents.send("fileProgress", {
       percentageProgress: percentageProgress,
       bytesTransferred: bytesTransferred
