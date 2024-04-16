@@ -1,14 +1,12 @@
 import { BrowserWindow } from 'electron'
-import onDeviceFound from './deviceDiscovery.js'
-import { ipcMain } from 'electron'
-import HandleFileDialogLogic from './fileDialog.js'
 
 /* global MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY, MAIN_WINDOW_WEBPACK_ENTRY */
 
-export default class WindowAndListenerSetup {
+class WindowAndListenerSetup {
+
   constructor() {
-    this.BrowserWindow
     this.webContents
+    this.BrowserWindow
   }
   createWindow() {
     this.BrowserWindow = new BrowserWindow({
@@ -24,16 +22,9 @@ export default class WindowAndListenerSetup {
     this.BrowserWindow.webContents.openDevTools()
     this.webContents = this.BrowserWindow.webContents
   }
-  onDeviceFound() {
-    onDeviceFound(this.webContents)
-  }
-  openFileDialogListener() {
-    ipcMain.handle('dialog:openFile', async (_, address, type) => {
-      await HandleFileDialogLogic(address, type, this.BrowserWindow)
-    })
+  returnWebContents() {
+    return this.webContents
   }
 }
 
-
-
-
+export default new WindowAndListenerSetup()

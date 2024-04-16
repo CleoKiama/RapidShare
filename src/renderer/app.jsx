@@ -11,11 +11,16 @@ import TransferProgress from './components/transferProgress.jsx'
 export default function App() {
   const [transferStart, setTransferStart] = useState(false)
   useEffect(() => {
-    const listener = (eventId, status) => {
+    const listener = (_, status) => {
+      console.log(status)
       setTransferStart(status)
     }
     window.electron.on('transferStart', listener)
-    return () => window.electron.removeListener('transferStart', listener)
+    window.electron.on('transferEnd', listener)
+    return () => {
+      window.electron.removeListener('transferStart', listener)
+      window.electron.removeListener('transferEnd', listener)
+    }
   }, [])
   return (
     <ErrorBoundary fallbackRender={Fallback}>

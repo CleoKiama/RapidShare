@@ -1,18 +1,15 @@
-import c from 'ansi-colors'
+import WindowAndListenerSetup from './mainWindowSetup'
 
 class TransferProgress {
   constructor() {
     this.totalSize = 0
-    this.webContents = null
   }
   updateTotalSize(size) {
     if (typeof size !== 'number')
       throw { message: "tried to update size with value that is not a number" }
     else this.totalSize = size
   }
-  setwebContents(webContents) {
-    this.webContents = webContents
-  }
+
   setProgress(bytes) {
     let percentageProgress;
     // Special case for empty directories
@@ -28,7 +25,7 @@ class TransferProgress {
     this.totalSize = size
   }
   updateUi(percentageProgress, bytesTransferred) {
-    this.webContents.send("fileProgress", {
+    WindowAndListenerSetup.webContents.send("fileProgress", {
       percentageProgress: percentageProgress,
       bytesTransferred: bytesTransferred
       //update the ui and tests for that 

@@ -8,7 +8,7 @@ export default function TransferProgress() {
     bytesTransferred: 0
   })
   useEffect(() => {
-    const listener = (eventId, progress) => {
+    const listener = (_, progress) => {
       setProgress(() => {
         return {
           percentageProgress: progress.percentageProgress,
