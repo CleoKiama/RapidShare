@@ -1,4 +1,4 @@
-import WindowAndListenerSetup from './mainWindowSetup'
+import WindowAndListenerSetup from './mainWindowSetup.js'
 
 class TransferProgress {
   constructor() {

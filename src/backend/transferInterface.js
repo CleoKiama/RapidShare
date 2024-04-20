@@ -1,46 +1,71 @@
 import c from 'ansi-colors'
 import thisMachineAddress from './currentAssignedAddress.js'
 import { createServer } from 'net'
-import startWrite from '../backend/writeFiles.js'
-
+// import startWrite from '../backend/writeFiles.js'
+import bonjour from 'bonjour'
+import os from 'os'
 
 export const address = thisMachineAddress()
-export const defaultClientListeningPort = 3000
+export var defaultClientListeningPort = 4000
 
-function startServer() {
-  const serverSocket = createServer({
-    keepAlive: true,
-  })
-  serverSocket.listen(
-    {
-      host: address,
-      port: defaultClientListeningPort,
-    },
-    () => {
-      addConnectionListener()
-      console.log(
-        c.green(
-          `tcp server ready on ${address} and ${defaultClientListeningPort}`
+class TransferServer {
+  constructor() {
+    this.server
+    this.publishServer()
+    this.servicePublished
+  }
+  startServer() {
+    this.server = createServer({
+      keepAlive: true,
+    })
+    this.server.listen(
+      {
+        host: address,
+        port: defaultClientListeningPort,
+      },
+      () => {
+        this.addConnectionListener()
+        console.log(
+          c.green(
+            `tcp server ready on ${this.server.address().address} and ${defaultClientListeningPort}`
+          )
         )
-      )
-    }
-  )
-  return serverSocket
+      }
+    )
+
+  }
+  connectionListener(socket) {
+    // startWrite(socket)
+    // ** once called do not allow any more connections
+    // this might change if to allow sending to more 
+    // than one device at a time 
+    this.removeConnectionListener()
+  }
+  addConnectionListener() {
+    this.server.on('connection', this.connectionListener)
+  }
+  publishServer() {
+    this.servicePublished = bonjour().publish(
+      {
+        name: `${os.userInfo().username}_server`,
+        type: 'http',
+        port: defaultClientListeningPort,
+        txt: {
+          ...os.userInfo(),
+          platform: os.type(),
+          address: address
+        }
+      })
+    this.servicePublished.start()
+  }
+  unpublish() {
+    this.servicePublished.stop()
+  }
+  removeConnectionListener() {
+    this.server.removeListener('connection', this.connectionListener)
+  }
+
 }
 
-export const server = startServer()
-
-//TODO should stop the pinging once a connection arrives but leave the multicast server online
-const connectionListener = (socket) => {
-  startWrite(socket)
-  removeConnectionListener()
-}
-export const addConnectionListener = () => {
-  server.on('connection', connectionListener)
-}
-
-export const removeConnectionListener = () => {
-  server.removeListener('connection', connectionListener)
-}
-
+export default new TransferServer()
 

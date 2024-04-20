@@ -62,6 +62,7 @@
   },
   "license": "MIT",
   "dependencies": {
+    "bonjour": "^3.5.0",
     "clsx": "^2.1.0",
     "electron-squirrel-startup": "^1.0.0",
     "fast-folder-size": "^2.2.0",

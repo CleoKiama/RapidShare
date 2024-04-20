@@ -73,10 +73,4 @@ export default async function transferFiles(rootPath, port, peerAdr) {
   //addConnectionListener()
 }
 
-// transferFiles('/home/cleo/Pictures/logos', '192.168.0.109').then(() => {
-//   console.log(c.magentaBright("transferFiles all done sending them files"))
-// })
-// transferFiles('/run/media/cleo/Library/books/dev books', '192.168.0.109').then(() => {
-//   console.log(c.magentaBright("transferFiles all done sending them files"))
-// })
 

@@ -10,6 +10,7 @@ function DiscoveredDevices() {
   const [isSelected, setIsSelected] = useState(false)
   useEffect(() => {
     function listen(_, data) {
+      console.log('recieved a device on the ui')
       setDeviceData(data)
     }
     window.electron.on('deviceFound', listen)

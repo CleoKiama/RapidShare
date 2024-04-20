@@ -4,6 +4,8 @@ import { platform } from 'process'
 import respondWithDeviceInfo from '../backend/deviceInfo.js'
 import WindowAndListenerSetup from '../backend/mainWindowSetup.js'
 import Main from '../backend/main.js'
+import c from 'ansi-colors'
+import TransferServer from '../backend/transferInterface.js'
 
 if (require('electron-squirrel-startup')) {
   app.quit()
@@ -27,7 +29,6 @@ app.on('ready', () => {
     }
   )
   WindowAndListenerSetup.createWindow()
-  //TODO Enable main backend functionality
   Main()
 })
 
@@ -39,7 +40,10 @@ app.on('window-all-closed', () => {
     app.quit()
   }
 })
-
+app.on('before-quit', () => {
+  console.log(c.magenta("this is goodbye"))
+  TransferServer.unpublish()
+})
 app.on('activate', () => {
   // On OS X it's common to re-create a window in the app when the
   // dock icon is clicked and there are no other windows open.

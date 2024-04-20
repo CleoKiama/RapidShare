@@ -5,7 +5,6 @@ import { BrowserWindow } from 'electron'
 class WindowAndListenerSetup {
 
   constructor() {
-    this.webContents
     this.BrowserWindow
   }
   createWindow() {
@@ -20,11 +19,11 @@ class WindowAndListenerSetup {
     this.BrowserWindow.loadURL(MAIN_WINDOW_WEBPACK_ENTRY)
     //TODO  might need to remove this in production : Open the DevTools.
     this.BrowserWindow.webContents.openDevTools()
-    this.webContents = this.BrowserWindow.webContents
   }
-  returnWebContents() {
-    return this.webContents
+  browserWindowRef() {
+    return this.BrowserWindow
   }
 }
 
 export default new WindowAndListenerSetup()
+
