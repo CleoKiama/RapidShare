@@ -4,7 +4,7 @@ import { promisify } from 'util'
 import { config } from './appConfig.js'
 
 
-export default class DestinationResolver {
+class DestinationResolver {
   constructor() {
     this.pendingFiles = new Map()
     this.destinationPath = config.getDestinationPath()
@@ -41,23 +41,18 @@ export default class DestinationResolver {
     const endOfFile = Buffer.from('all done')
     if (dataBuffer === null)
       return this.createDirectoryIfNotExists(fullPath)
-    if (
-      dataBuffer.length === endOfFile.length &&
-      dataBuffer.compare(endOfFile) === 0
-    ) {
+    if (dataBuffer.length === endOfFile.length && dataBuffer.compare(endOfFile) === 0) {
       if (this.pendingFiles.has(fullPath)) {
         let pendingStream = this.pendingFiles.get(fullPath)
         return pendingStream.end()
       } else
-        console.error(
-          c.red(`the file is not in the pending streams list: ${relativePath}`)
-        )
-      return Promise.reject(
-        new Error(
-          'all done message received for file not in pending streams list'
-        )
-      )
+        return Promise.reject(new Error('all done message received for file not in pending streams list'))
     }
     await this.writeToDestination(fullPath, dataBuffer)
   }
+  cleanUp() {
+    this.pendingFiles.clear()
+  }
 }
+
+export default new DestinationResolver()

@@ -1,7 +1,7 @@
 import c from 'ansi-colors'
 import thisMachineAddress from './currentAssignedAddress.js'
 import { createServer } from 'net'
-// import startWrite from '../backend/writeFiles.js'
+import startWrite from '../backend/startWrite.js'
 import bonjour from 'bonjour'
 import os from 'os'
 
@@ -34,10 +34,10 @@ class TransferServer {
     )
 
   }
-  connectionListener(socket) {
-    // startWrite(socket)
+  async connectionListener(socket) {
+    await startWrite(socket)
     // ** once called do not allow any more connections
-    // this might change if to allow sending to more 
+    // this might change if we allow sending to more 
     // than one device at a time 
     this.removeConnectionListener()
   }
@@ -66,6 +66,7 @@ class TransferServer {
   }
 
 }
+
 
 export default new TransferServer()
 

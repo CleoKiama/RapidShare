@@ -1,10 +1,10 @@
 import c from 'ansi-colors'
 import DestinationResolver from './destinationResolver.js'
-import TransferProgress from './transferProgress.js'
+import updateUi from './updateUi.js'
+
 
 export default async function Demultiplexer(source) {
-  let DestinationResolverInstance = new DestinationResolver()
-  let pendingWriteOprations = 0
+  let pendingWriteOperations = 0
   let currentLength = null
   let currentPath = null
   source.on('readable', () => {
@@ -22,7 +22,6 @@ export default async function Demultiplexer(source) {
       return null
     }
     let progress = chunk.readUInt8(0)
-    console.log(c.green(progress))
     let pathLength = chunk.readUInt8(1)
     currentPath = chunk.toString('utf8', 2, 2 + pathLength)
     let contentBuffer = Buffer.alloc(chunk.length - pathLength - 2)
@@ -31,10 +30,14 @@ export default async function Demultiplexer(source) {
         contentBuffer = null
       } else chunk.copy(contentBuffer, 0, 2 + pathLength, chunk.length)
     if (contentBuffer) {
-      TransferProgress.updateUi(progress, contentBuffer.length)
-    } else TransferProgress.updateUi(progress, 0)
-    pendingWriteOprations += 1
-    DestinationResolverInstance.saveToFileSystem(currentPath, contentBuffer).then(() => pendingWriteOprations -= 1)
+      updateUi.updateProgress(progress, contentBuffer.length)
+    } else updateUi.updateProgress(progress, 0)
+    pendingWriteOperations += 1
+    try {
+      DestinationResolver.saveToFileSystem(currentPath, contentBuffer).then(() => pendingWriteOperations -= 1)
+    } catch (error) {
+      console.error(c.red(error.message))
+    }
     currentLength = null
     currentPath = null
   })
@@ -44,9 +47,10 @@ export default async function Demultiplexer(source) {
       console.log(c.magentaBright('The socket end event fired waiting for pending write operations'))
       // remember to handle pending write operations
       let interval = setInterval(() => {
-        if (pendingWriteOprations === 0) {
+        if (pendingWriteOperations === 0) {
           clearInterval(interval)
-          console.log(c.blue(`pending writeOperations at the time of exiting  ${pendingWriteOprations}`))
+          console.log(c.blue(`pending writeOperations at the time of exiting  ${pendingWriteOperations}`))
+          DestinationResolver.cleanUp()
           resolve()
         }
       }, 700)

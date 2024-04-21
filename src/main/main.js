@@ -4,7 +4,7 @@ import { platform } from 'process'
 import respondWithDeviceInfo from '../backend/deviceInfo.js'
 import WindowAndListenerSetup from '../backend/mainWindowSetup.js'
 import Main from '../backend/main.js'
-import c from 'ansi-colors'
+
 import TransferServer from '../backend/transferInterface.js'
 
 if (require('electron-squirrel-startup')) {
@@ -41,7 +41,6 @@ app.on('window-all-closed', () => {
   }
 })
 app.on('before-quit', () => {
-  console.log(c.magenta("this is goodbye"))
   TransferServer.unpublish()
 })
 app.on('activate', () => {

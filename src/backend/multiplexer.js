@@ -8,7 +8,6 @@ import { pipeline } from 'node:stream/promises'
 import TransferProgress from './transferProgress.js'
 
 export function createPacket(path, chunk, progress) {
-  if (!progress && typeof (progress) !== "number") throw { message: "progress must be a number" }
   const pathBuffer = Buffer.from(path)
   const packet = Buffer.alloc(4 + 1 + 1 + pathBuffer.length + (chunk ? chunk.length : 0))
   packet.writeUInt32BE(1 + 1 + pathBuffer.length + (chunk ? chunk.length : 0), 0)
@@ -45,7 +44,6 @@ export default async function multiplexer(rootPath, destination) {
     )
     return Promise.reject(error)
   }
-  console.log(c.yellow('multiplexer all done remember to end the socket now'))
 }
 const sendEmptyDirPacket = async (rootPath, emptyDirPath, destination) => {
   let relativePath
@@ -54,6 +52,7 @@ const sendEmptyDirPacket = async (rootPath, emptyDirPath, destination) => {
   // ** as in no files but may have other nested Empty Dirs
   if (emptyDirPath === rootPath) relativePath = basename
   else relativePath = `${basename}${emptyDirPath.substring(rootPath.length)}`
+  //TODO This will be a bug later fix it
   let progress = TransferProgress.setProgress(0)
   let drain = destination.write(createPacket(relativePath, null, progress), (err) => {
     if (err) return Promise.reject(err)

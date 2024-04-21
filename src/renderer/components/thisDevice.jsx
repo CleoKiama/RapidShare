@@ -7,7 +7,7 @@ export default function ThisDevice() {
   const [thisDeviceInfo, setThisDeviceInfo] = useState(false)
   useEffect(() => {
     if (thisDeviceInfo) return
-    window.electron.this_device().then((device) => {
+    window.electron.invoke('thisDevice').then((device) => {
       setThisDevice(device)
       setThisDeviceInfo(true)
     })

@@ -1,3 +1,4 @@
+import updateUi from '../backend/updateUi.js'
 import TransferProgress from '../backend/transferProgress.js'
 import Demultiplexer from '../backend/demultiplexer.js'
 import path from 'node:path'
@@ -10,7 +11,7 @@ import { PassThrough } from 'node:stream'
 import multiplexer from '../backend/multiplexer.js'
 import GetFilesSize from '../backend/readFilesSize.js'
 
-var updateUiSpy = jest.spyOn(TransferProgress, 'updateUi').mockImplementation(() => { })
+var updateUiSpy = jest.spyOn(updateUi, 'updateProgress').mockImplementation(() => { })
 
 var setProgressSpy = jest.spyOn(TransferProgress, 'setProgress')
 

@@ -3,12 +3,13 @@ import { render } from "@testing-library/react"
 import { EventEmitter } from "node:events"
 import App from "../app.jsx"
 import os from 'os'
+import c from 'ansi-colors'
 
 
 test("renders the TransferFileProgress component on startTransfer", async () => {
   const transferMonitor = new EventEmitter()
   setTimeout(() => {
-    transferMonitor.emit('transferStart', {
+    transferMonitor.emit('transferring', {
       eventid: "1234142jIJ$%"
     }, true)
   }, 700)
@@ -19,30 +20,33 @@ test("renders the TransferFileProgress component on startTransfer", async () => 
     removeListener: (channel, callback) => {
       transferMonitor.removeListener(channel, callback)
     },
-    this_device: async () => {
+    async invoke(channel) {
       return {
         type: os.type(),
         userInfo: os.userInfo(),
       }
     }
+
   }
+  let thisDeviceSpy = jest.spyOn(window.electron, 'invoke')
   const { findByText } = render(<App />)
   const statusMessage = await findByText(/sending files/, {
     timeout: 950
   })
+  expect(thisDeviceSpy).toHaveBeenCalledWith('thisDevice')
   expect(statusMessage).toBeInTheDocument()
 })
 
 test("reverts  back the ui once the the transfer of files is done", async () => {
   const transferMonitor = new EventEmitter()
   setTimeout(() => {
-    transferMonitor.emit('transferEnd', {
+    transferMonitor.emit('transferring', {
       eventid: "1234142jIJ$%"
     }, false)
   }, 900)
 
   setTimeout(() => {
-    transferMonitor.emit('transferStart', {
+    transferMonitor.emit('transferring', {
       eventid: "1234142jIJ$%"
     }, true)
   }, 700)
@@ -53,19 +57,22 @@ test("reverts  back the ui once the the transfer of files is done", async () => 
     removeListener: (channel, callback) => {
       transferMonitor.removeListener(channel, callback)
     },
-    this_device: async () => {
+    async invoke(channel) {
+      console.log(c.green(channel))
       return {
         type: os.type(),
         userInfo: os.userInfo(),
       }
     }
   }
+  let thisDeviceSpy = jest.spyOn(window.electron, 'invoke')
   const { findByText } = render(<App />)
   const statusMessage = await findByText(/sending files/, {
     timeout: 800
   })
   expect(statusMessage).toBeInTheDocument()
   await new Promise(resolve => setTimeout(resolve, 1000))
+  expect(thisDeviceSpy).toHaveBeenCalledWith('thisDevice')
   expect(statusMessage).not.toBeInTheDocument()
 })
 

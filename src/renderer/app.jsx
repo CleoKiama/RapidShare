@@ -15,11 +15,9 @@ export default function App() {
       console.log(status)
       setTransferStart(status)
     }
-    window.electron.on('transferStart', listener)
-    window.electron.on('transferEnd', listener)
+    window.electron.on('transferring', listener)
     return () => {
-      window.electron.removeListener('transferStart', listener)
-      window.electron.removeListener('transferEnd', listener)
+      window.electron.removeListener('transferring', listener)
     }
   }, [])
   return (

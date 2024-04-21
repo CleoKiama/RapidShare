@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from 'react'
 import { Line } from 'rc-progress'
 
-
 export default function TransferProgress() {
   const [progress, setProgress] = useState({
-    percentageProgress: 50,
+    percentageProgress: 0,
     bytesTransferred: 0
   })
   useEffect(() => {
@@ -17,7 +16,7 @@ export default function TransferProgress() {
       })
     }
     window.electron.on("fileProgress", listener)
-    return () => window.electron.removeListener("fileTransfer", listener)
+    return () => window.electron.removeListener("fileProgress", listener)
   }, [])
   //TODO Get the actual DeviceName
   return (

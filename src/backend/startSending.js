@@ -1,13 +1,12 @@
 import transferFiles from "./sendFiles";
 import c from 'ansi-colors'
 import updateUi from "./updateUi";
-
+import BonjourDeviceDiscovery from "./bonjourDeviceDiscovery.js";
 
 class StartSending {
 
-  async start(filePaths, port = 3000, address) {
-    //TODO for now we are using a default port of 3000   
-    //have the other devices say what port they are using incase 3000 is busy
+  async start(filePaths, addressToMatch) {
+    const { address, port } = BonjourDeviceDiscovery.getfoundDevices().devices.find((device) => device.address === addressToMatch)
     try {
       updateUi.onTransferStart()
       await transferFiles(filePaths, port, address)
@@ -19,5 +18,4 @@ class StartSending {
 }
 
 export default new StartSending()
-
 

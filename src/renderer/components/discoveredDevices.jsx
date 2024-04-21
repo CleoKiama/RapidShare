@@ -8,17 +8,22 @@ function DiscoveredDevices() {
   const [deviceData, setDeviceData] = useState()
   const [deviceSelected, setDeviceSelected] = useState()
   const [isSelected, setIsSelected] = useState(false)
+
   useEffect(() => {
     function listen(_, data) {
       console.log('recieved a device on the ui')
       setDeviceData(data)
     }
     window.electron.on('deviceFound', listen)
-    window.electron.on('foundDevicesUpdate', listen)
     return () => {
       window.electron.removeListener('deviceFound', listen)
-      window.electron.removeListener('foundDevicesUpdate', listen)
     }
+  }, [])
+  useEffect(() => {
+    if (!deviceData)
+      window.electron.invoke('currentDevices').then((foundDevices) => {
+        setDeviceData(foundDevices)
+      })
   }, [])
   const handleNavigationBack = () => {
     setIsSelected(false)

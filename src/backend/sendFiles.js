@@ -7,18 +7,21 @@ import { createReadStream } from 'node:fs'
 import c from 'ansi-colors'
 import { once } from 'events'
 import formatBytes from './formatBytes.js'
+import GetFilesSize from './readFilesSize.js'
+import TransferProgress from './transferProgress.js'
 
 export async function returnFileStream(rootPath, destination) {
   const relativePath = `/${path.basename(rootPath)}`
   return new Promise((resolve, reject) => {
     const fileStream = createReadStream(rootPath)
     fileStream.on('data', (data) => {
-      let packet = createPacket(relativePath, data)
+      let progress = TransferProgress.setProgress(data.length)
+      let packet = createPacket(relativePath, data, progress)
       destination.write(packet)
     })
     fileStream.on('end', () => {
       const endMessage = Buffer.from('all done')
-      destination.write(createPacket(relativePath, endMessage), () => {
+      destination.write(createPacket(relativePath, endMessage, 100), () => {
         console.log(
           c.green(
             `total size of file sent ${formatBytes(destination.bytesWritten)}`
@@ -54,7 +57,8 @@ export default async function transferFiles(rootPath, port, peerAdr) {
       port,
       peerAdr
     )
-
+    let totalSize = await GetFilesSize(rootPath)
+    TransferProgress.setTotalSize(totalSize)
     const { isDir } = await identifyPath(rootPath)
     isDir
       ? await multiplexer(rootPath, peerSocket)
@@ -73,4 +77,10 @@ export default async function transferFiles(rootPath, port, peerAdr) {
   //addConnectionListener()
 }
 
+// transferFiles('/home/cleo/Pictures/logos', '192.168.0.109').then(() => {
+//   console.log(c.magentaBright("transferFiles all done sending them files"))
+// })
+// transferFiles('/run/media/cleo/Library/books/dev books', '192.168.0.109').then(() => {
+//   console.log(c.magentaBright("transferFiles all done sending them files"))
+// })
 

@@ -1,8 +1,9 @@
 import c from 'ansi-colors'
 import bonjour from "bonjour";
 import updateUi from "./updateUi.js";
+import { ipcMain } from 'electron';
 
-export default class BonjourDeviceDiscovery {
+class BonjourDeviceDiscovery {
   constructor() {
     this.foundDevices = { devices: [] }
     this.browser = bonjour().find({
@@ -15,6 +16,10 @@ export default class BonjourDeviceDiscovery {
       this.verifyDevices(deviceInfo)
     })
     this.monitorDevices()
+    this.returnToUi()
+  }
+  getfoundDevices() {
+    return this.foundDevices
   }
   start() {
     this.browser.start()
@@ -51,7 +56,12 @@ export default class BonjourDeviceDiscovery {
       this.removeDevice(service.txt)
     })
   }
+  returnToUi() {
+    ipcMain.handle("currentDevices", () => {
+      return this.foundDevices
+    })
+  }
 }
 
-
+export default new BonjourDeviceDiscovery()
 

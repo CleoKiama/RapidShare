@@ -7,8 +7,8 @@ contextBridge.exposeInMainWorld('electron', {
   removeListener: (channel, func) => {
     ipcRenderer.removeListener(channel, func)
   },
-  this_device: async () => {
-    return ipcRenderer.invoke('thisDevice')
+  async invoke(channel) {
+    return ipcRenderer.invoke(channel)
   },
   openFileDialog: (address, type) => ipcRenderer.invoke('dialog:openFile', address, type),
 })
