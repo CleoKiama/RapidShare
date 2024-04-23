@@ -21,10 +21,13 @@ test("renders the TransferFileProgress component on startTransfer", async () => 
       transferMonitor.removeListener(channel, callback)
     },
     async invoke(channel) {
-      return {
-        type: os.type(),
-        userInfo: os.userInfo(),
+      if (channel === 'thisDevice') {
+        return {
+          type: os.type(),
+          userInfo: os.userInfo(),
+        }
       }
+      return { devices: [] }
     }
 
   }
@@ -58,11 +61,13 @@ test("reverts  back the ui once the the transfer of files is done", async () => 
       transferMonitor.removeListener(channel, callback)
     },
     async invoke(channel) {
-      console.log(c.green(channel))
-      return {
-        type: os.type(),
-        userInfo: os.userInfo(),
+      if (channel === 'thisDevice') {
+        return {
+          type: os.type(),
+          userInfo: os.userInfo(),
+        }
       }
+      return { devices: [] }
     }
   }
   let thisDeviceSpy = jest.spyOn(window.electron, 'invoke')

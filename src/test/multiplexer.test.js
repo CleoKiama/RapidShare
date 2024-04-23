@@ -8,12 +8,17 @@ import multiplexer from '../backend/multiplexer.js'
 import { PassThrough } from 'stream'
 import path from 'path'
 
-jest.spyOn(TransferProgress, "updateUi").mockImplementation(() => {
+jest.mock("../backend/updateUi.js", () => {
+  return {
+    __esModule: true,
+    default: {
+      updateProgress() {
+
+      }
+    }
+  }
 })
-jest.spyOn(TransferProgress, "setProgress").mockImplementation(() => {
-  TransferProgress.updateUi(40, 140)
-  return 40
-})
+
 const json = {
   './fileOne.txt':
     'The quick brown fox jumps over the lazy dog. This sentence contains every letter of the alphabet.',

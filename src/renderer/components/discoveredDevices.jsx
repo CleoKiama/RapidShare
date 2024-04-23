@@ -4,23 +4,22 @@ import ChooseFile from './chooseFile.jsx'
 
 
 function DiscoveredDevices() {
-  // TODO remember to remove the initual data here when done with the ui
   const [deviceData, setDeviceData] = useState()
   const [deviceSelected, setDeviceSelected] = useState()
   const [isSelected, setIsSelected] = useState(false)
 
   useEffect(() => {
     function listen(_, data) {
-      console.log('recieved a device on the ui')
+      console.log(data)
       setDeviceData(data)
     }
-    window.electron.on('deviceFound', listen)
+    window.electron.on('updateDevices', listen)
     return () => {
-      window.electron.removeListener('deviceFound', listen)
+      window.electron.removeListener('updateDevices', listen)
     }
   }, [])
   useEffect(() => {
-    if (!deviceData)
+    if (typeof deviceData === 'undefined')
       window.electron.invoke('currentDevices').then((foundDevices) => {
         setDeviceData(foundDevices)
       })

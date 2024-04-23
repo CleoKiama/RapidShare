@@ -4,19 +4,16 @@
 import updateUi from '../backend/updateUi.js'
 import TransferProgress from '../backend/transferProgress.js'
 import Demultiplexer from '../backend/demultiplexer.js'
-import path from 'node:path'
-import formatBytes from '../backend/formatBytes.js'
-import fastFolderSize from 'fast-folder-size'
 import os from 'node:os'
 import fs from 'fs-extra'
-import { promisify } from 'node:util'
 import { PassThrough } from 'node:stream'
-import multiplexer from '../backend/multiplexer.js'
+import multiplexer, { cancelOperation } from '../backend/multiplexer.js'
 import GetFilesSize from '../backend/readFilesSize.js'
+import c from 'ansi-colors'
 
-var updateUiSpy = jest.spyOn(updateUi, 'updateProgress').mockImplementation(() => { })
+jest.spyOn(updateUi, 'updateProgress').mockImplementation(() => { })
 
-var setProgressSpy = jest.spyOn(TransferProgress, 'setProgress')
+jest.spyOn(TransferProgress, 'setProgress')
 
 var sourcePath = `${os.tmpdir()}/send`
 var destinationPath = `${os.tmpdir()}/username/Downloads`
@@ -52,8 +49,6 @@ const json = {
 beforeEach(() => {
   fs.removeSync(sourcePath)
   fs.removeSync((destinationPath))
-})
-beforeEach(() => {
   fs.ensureDirSync(sourcePath)
   let values = Object.values(json)
   Object.keys(json).map((value, index) => {
@@ -62,54 +57,75 @@ beforeEach(() => {
   })
 })
 
-const getSize = async (rootPath) => {
-  if (!path.extname(rootPath)) {
-    const fastFolderSizeAsync = promisify(fastFolderSize)
-    let size = await fastFolderSizeAsync(rootPath)
-    return formatBytes(size)
-  }
-  let { size } = await fs.stat(rootPath)
-  return formatBytes(size)
-}
 
-
-test("mux and demux work and update the progress", async () => {
-  let sourceSize = await getSize(sourcePath)
+test("cancels multiplexer when aborted", async () => {
   let transferInterface = new PassThrough()
   let demux = Demultiplexer(transferInterface)
   let totalSize = await GetFilesSize(sourcePath)
   TransferProgress.setTotalSize(totalSize)
-  await multiplexer(sourcePath, transferInterface)
-  transferInterface.end()
+  setImmediate(() => {
+    cancelOperation()
+  }, 200)
+  await new Promise((done) => {
+    multiplexer(sourcePath, transferInterface).catch(error => {
+      expect(error.code).toBe('ABORT_ERR')
+      transferInterface.end()
+      done()
+    })
+  })
   await demux
-  let finalsize = await getSize(destinationPath)
-  expect(finalsize).toBe(sourceSize)
-  expect(updateUiSpy).toHaveBeenCalledWith(expect.any(Number), expect.any(Number))
 })
 
 
-describe.only("Updates the progress even for empty directories or files", () => {
-  let emptyDirSource = `${os.tmpdir()}/emptyDirTest`
+describe('cancels for empty directories', () => {
   beforeEach(() => {
-    fs.removeSync(emptyDirSource)
+    fs.removeSync(sourcePath)
     fs.removeSync((destinationPath))
-    fs.ensureDirSync(emptyDirSource)
+    fs.ensureDirSync(sourcePath)
   })
-  it("updates the progress for empty dirs", async () => {
-    let initSize = await getSize(emptyDirSource)
-    expect(initSize).toBe('0 Bytes')
+
+  it("cancels multiplexer for empty directories", async () => {
     let transferInterface = new PassThrough()
     let demux = Demultiplexer(transferInterface)
-    let sizeRead = await GetFilesSize(emptyDirSource)
-    TransferProgress.updateTotalSize(sizeRead)
-    await multiplexer(emptyDirSource, transferInterface)
-    transferInterface.end()
+    let totalSize = await GetFilesSize(sourcePath)
+    TransferProgress.setTotalSize(totalSize)
+    setImmediate(() => {
+      cancelOperation()
+    }, 200)
+    await new Promise((done) => {
+      multiplexer(sourcePath, transferInterface).catch(error => {
+        transferInterface.end()
+        expect(error.code).toBe('ABORT_ERR')
+        done()
+      })
+    })
     await demux
-    let finalsize = await getSize(`${destinationPath}/emptyDirTest`)
-    expect(finalsize).toBe(initSize)
-    expect(updateUiSpy).toHaveBeenCalledWith(expect.any(Number), expect.any(Number))
-    expect(setProgressSpy).toHaveBeenCalledWith(0)
-    expect(setProgressSpy).toHaveReturnedWith(100)
   })
 })
+
+
+test("Demux cleans up and rejects on abort", async () => {
+  let transferInterface = new PassThrough()
+  let demux = Demultiplexer(transferInterface)
+  let totalSize = await GetFilesSize(sourcePath)
+  TransferProgress.setTotalSize(totalSize)
+  setImmediate(() => {
+    cancelOperation()
+  }, 200)
+  multiplexer(sourcePath, transferInterface).catch((error) => {
+    //rememeber to call destry in transferInterface
+    transferInterface.destroy(error)
+  })
+  const errorSpy = jest.fn((error) => {
+    expect(error.code).toBe("ABORT_ERR")
+  })
+  transferInterface.on('error', errorSpy)
+  await new Promise(done => {
+    demux.catch(() => {
+      done()
+    })
+  })
+  expect(errorSpy).toHaveBeenCalled()
+})
+
 

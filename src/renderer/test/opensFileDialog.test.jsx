@@ -56,7 +56,10 @@ test('handles the file send button click', async () => {
     removeListener: (channel, fn) => {
       device.removeListener(channel, fn)
     },
-    openFileDialog: (address, type) => ipcRenderer.invoke('dialog:openFile', address, type),
+    async invoke() {
+      return foundDevices
+    },
+    openFileDialog: (address, type) => ipcRenderer.invoke('dialog:openFile', address, type)
   }
   const { getByText, findByAltText } = render(<DiscoveredDevices />)
   const deviceToClick = await findByAltText(/logo/)

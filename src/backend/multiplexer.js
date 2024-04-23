@@ -1,12 +1,13 @@
 import createStreamSources from './createFileStreams.js'
 import GenerateFiles from './generateFiles.js'
 import path from 'path'
-import c from 'ansi-colors'
 import { once } from 'node:events'
 import { Transform } from 'stream'
 import { pipeline } from 'node:stream/promises'
 import TransferProgress from './transferProgress.js'
+import { promisify } from 'util'
 
+var controller
 export function createPacket(path, chunk, progress) {
   const pathBuffer = Buffer.from(path)
   const packet = Buffer.alloc(4 + 1 + 1 + pathBuffer.length + (chunk ? chunk.length : 0))
@@ -20,47 +21,60 @@ export function createPacket(path, chunk, progress) {
 
 
 export default async function multiplexer(rootPath, destination) {
-  try {
-    //for now a max concurrency of 3 files work 4 has problems 
-    const fileGenerator = new GenerateFiles(rootPath, 2)
-    const iterator = fileGenerator[Symbol.asyncIterator]()
-    let iteratorResult = await iterator.next()
-    while (!iteratorResult.done) {
-      if (Object.hasOwn(iteratorResult.value, 'empty')) {
-        await sendEmptyDirPacket(
-          rootPath,
-          iteratorResult.value.path,
-          destination
-        )
-        iteratorResult = await iterator.next()
-        continue
-      }
-      await awaitSendPackets(rootPath, iteratorResult.value, destination)
+  controller = new AbortController()
+  //for now a max concurrency of 3 files work 4 has problems 
+  const fileGenerator = new GenerateFiles(rootPath, 2)
+  const iterator = fileGenerator[Symbol.asyncIterator]()
+  let iteratorResult = await iterator.next()
+  while (!iteratorResult.done) {
+    if (Object.hasOwn(iteratorResult.value, 'empty')) {
+      await sendEmptyDirPacket(
+        rootPath,
+        iteratorResult.value.path,
+        destination
+      )
       iteratorResult = await iterator.next()
+      continue
     }
-  } catch (error) {
-    console.error(
-      c.redBright(`error happened multiplexing  : ${error.message}`)
-    )
-    return Promise.reject(error)
+    await awaitSendPackets(rootPath, iteratorResult.value, destination)
+    iteratorResult = await iterator.next()
   }
 }
+
 const sendEmptyDirPacket = async (rootPath, emptyDirPath, destination) => {
-  let relativePath
-  const basename = `/${path.basename(rootPath)}`
-  // **handling the case where the first emptyDir is also empty
-  // ** as in no files but may have other nested Empty Dirs
-  if (emptyDirPath === rootPath) relativePath = basename
-  else relativePath = `${basename}${emptyDirPath.substring(rootPath.length)}`
-  //TODO This will be a bug later fix it
-  let progress = TransferProgress.setProgress(0)
-  let drain = destination.write(createPacket(relativePath, null, progress), (err) => {
-    if (err) return Promise.reject(err)
+  return await new Promise((resolve, reject) => {
+    if (controller.signal.aborted) {
+      let error = new Error("The operation was aborted")
+      error.code = "ABORT_ERR"
+      return reject(error)
+    }
+    let abortListener = () => {
+      let error = new Error("The operation was aborted")
+      error.code = "ABORT_ERR"
+      reject(error)
+    }
+    controller.signal.addEventListener('abort', abortListener, {
+      once: true
+    })
+
+    let relativePath
+    const basename = `/${path.basename(rootPath)}`
+    // **handling the case where the first emptyDir is also empty
+    // ** as in no files but may have other nested Empty Dirs
+    if (emptyDirPath === rootPath) relativePath = basename
+    else relativePath = `${basename}${emptyDirPath.substring(rootPath.length)}`
+    //TODO This will be a bug later fix it
+    let progress = TransferProgress.setProgress(0)
+    let drain = destination.write(createPacket(relativePath, null, progress), (err) => {
+      if (err) return Promise.reject(err)
+    })
+    if (!drain) once(destination, 'drain').then(resolve)
+    else resolve()
   })
-  if (!drain) return await once(destination, 'drain')
 }
 
 function awaitSendPackets(rootPath, files, destination) {
+
   let sources = createStreamSources(files)
   let pendingWritingOperations = []
   return new Promise((resolve, reject) => {
@@ -79,8 +93,11 @@ function awaitSendPackets(rootPath, files, destination) {
   })
 }
 
+export const cancelOperation = () => {
+  controller.abort()
+}
 
-const sendFile = (relativePath, sourceFile, destination) => {
+const sendFile = async (relativePath, sourceFile, destination) => {
   const transformToPacket = new Transform({
     transform(chunk, encoding, callback) {
       let progress = TransferProgress.setProgress(chunk.length)
@@ -89,35 +106,14 @@ const sendFile = (relativePath, sourceFile, destination) => {
       callback()
     }
   })
-  return new Promise((resolve, reject) => {
-    try {
-      pipeline(sourceFile, transformToPacket, destination, {
-        end: false
-      }).then(() => {
-        const endOfFileMessage = 'all done'
-        destination.write(
-          createPacket(
-            relativePath,
-            Buffer.from(endOfFileMessage),
-            100
-          ),
-          (err) => {
-            if (err) return reject(err)
-            resolve()
-          }
-        )
-
-      })
-    } catch (err) {
-      console.error(
-        c.red(
-          `error happened while reading file ${relativePath} : ${err.message}`
-        )
-      )
-      reject(err)
-    }
-
+  await pipeline(sourceFile, transformToPacket, destination, {
+    signal: controller.signal,
+    end: false
   })
+
+  const endOfFileMessage = 'all done'
+  let awaitWrite = promisify(destination.write.bind(destination))
+  await awaitWrite(createPacket(relativePath, Buffer.from(endOfFileMessage), 100))
 
 }
 

@@ -13,6 +13,7 @@ class TransferProgress {
   }
 
   setProgress(bytes) {
+    console.log(c.blue(bytes))
     let percentageProgress;
     this.currentlyTransferred += bytes
     // Special case for empty directories
@@ -26,12 +27,10 @@ class TransferProgress {
       updateUi.updateProgress(100, bytes);
       return 100;
     }
-    console.log(c.greenBright(`computed percentage value ${percentageProgress}`))
     updateUi.updateProgress(percentageProgress, this.currentlyTransferred);
     return percentageProgress;
   }
   setTotalSize(size) {
-    console.log(c.yellow(`setting the total size : ${size}`))
     this.totalSize = size
   }
   cleanUp() {

@@ -10,7 +10,7 @@
     "make": "electron-forge make",
     "publish": "electron-forge publish",
     "lint": "echo \"No linting configured\"",
-    "test": "jest --testPathPattern='app.test.jsx' --watchAll"
+    "test": "jest  --watchAll"
   },
   "devDependencies": {
     "@babel/core": "^7.23.9",

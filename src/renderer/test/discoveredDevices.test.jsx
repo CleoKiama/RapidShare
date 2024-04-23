@@ -73,7 +73,7 @@ test('renders all the discovered devices', async () => {
   const device = new EventEmitter()
   setTimeout(() => {
     device.emit(
-      'deviceFound',
+      'updateDevices',
       {
         eventId: '79374375835730',
       },
@@ -88,6 +88,9 @@ test('renders all the discovered devices', async () => {
     removeListener: (channel, fn) => {
       device.removeListener(channel, fn)
     },
+    async invoke() {
+      return foundDevices
+    }
   }
   const { findAllByAltText } = render(<DiscoveredDevices />)
   const deviceLogos = await findAllByAltText(/platform/i)
@@ -105,13 +108,13 @@ test('updates when a device goes offline', async () => {
   var onlineDevices = { devices: [] }
   setTimeout(() => {
     device.emit(
-      'deviceFound',
+      'updateDevices',
       {
         eventId: '7@E70',
       },
       foundDevices
     )
-  }, 200)
+  }, 700)
 
   window.electron = {
     on: (channel, callback) => {
@@ -120,18 +123,20 @@ test('updates when a device goes offline', async () => {
     removeListener: (channel, fn) => {
       device.removeListener(channel, fn)
     },
+    async invoke() {
+      return onlineDevices
+    }
   }
-  await setTimeoutPromise(700)
   onlineDevices.devices = foundDevices.devices.slice(0, 3)
   setTimeout(function() {
     device.emit(
-      'foundDevicesUpdate',
+      'updateDevices',
       {
         eventId: '79374375835730',
       },
       onlineDevices
     )
-  }, 200)
+  }, 1200)
   const { findAllByAltText } = render(<DiscoveredDevices />)
   const deviceLogos = await findAllByAltText(/platform/i)
   deviceLogos.forEach((img, index) => {

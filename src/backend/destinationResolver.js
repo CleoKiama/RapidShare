@@ -28,7 +28,6 @@ class DestinationResolver {
   }
 
   createFileIfNotExists(filePath) {
-    console.log(c.magenta(`writing empty dir ${filePath}`))
     return fs.ensureFileSync(filePath)
   }
 
@@ -51,6 +50,9 @@ class DestinationResolver {
     await this.writeToDestination(fullPath, dataBuffer)
   }
   cleanUp() {
+    Array.from(this.pendingFiles).map(value => {
+      value[1].end()
+    })
     this.pendingFiles.clear()
   }
 }

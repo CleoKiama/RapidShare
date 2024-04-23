@@ -56,11 +56,9 @@ export default async function Demultiplexer(source) {
       }, 700)
     })
     source.once('error', (err) => {
-      console.log(
-        c.red(`error from demux from source.on(err) ${err.message} `)
-      )
       //TODO might need to do better cleanup here instead of just resolving
-      reject(err.message)
+      DestinationResolver.cleanUp()
+      reject('something went wrong')
     })
   })
 }

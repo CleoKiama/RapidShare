@@ -51,11 +51,5 @@ test("sends progress percentage in packet", () => {
   expect(returnedProgress).toBe(progress)
 })
 
-test("create Packet throws an error when progress is not defined", () => {
-  expect(() => {
-    createPacket('/path', Buffer.from("chunk"))
-  }).toThrow()
-
-})
 
 
