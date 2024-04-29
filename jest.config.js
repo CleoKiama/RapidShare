@@ -3,8 +3,11 @@ const config = {
     '^.+\\.(t|j)sx?$': '@swc/jest',
   },
   testEnvironment: 'jest-environment-jsdom',
+  moduleNameMapper: {
+    "\\.(css|less|scss|sass)$": "<rootDir>/__mocks__/styleMock.js",
+  },
   testPathIgnorePatterns: ['/node_modules/'],
   setupFilesAfterEnv: ['<rootDir>/setupJestDom.js'],
 }
 
-export default config
+module.exports = config

@@ -3,7 +3,6 @@ import { render } from "@testing-library/react"
 import { EventEmitter } from "node:events"
 import App from "../app.jsx"
 import os from 'os'
-import c from 'ansi-colors'
 
 
 test("renders the TransferFileProgress component on startTransfer", async () => {

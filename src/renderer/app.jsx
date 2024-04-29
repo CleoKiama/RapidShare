@@ -12,7 +12,6 @@ export default function App() {
   const [transferStart, setTransferStart] = useState(false)
   useEffect(() => {
     const listener = (_, status) => {
-      console.log(status)
       setTransferStart(status)
     }
     window.electron.on('transferring', listener)
@@ -20,6 +19,9 @@ export default function App() {
       window.electron.removeListener('transferring', listener)
     }
   }, [])
+  const HandleNavigationBack = () => {
+    setTransferStart(false)
+  }
   return (
     <ErrorBoundary fallbackRender={Fallback}>
       <main className="mx-auto mt-4 max-h-fit  w-[474px]  rounded-2xl bg-grey-200 px-6 py-4 ">
@@ -29,7 +31,11 @@ export default function App() {
           </header>
           <Nav />
           {
-            transferStart ? <TransferProgress /> :
+            transferStart ?
+              <TransferProgress
+                onNavigateBack={HandleNavigationBack}
+              />
+              :
               <div>
                 <ThisDevice />
                 <DiscoveredDevices />

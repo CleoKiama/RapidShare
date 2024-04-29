@@ -9,7 +9,6 @@ import fs from 'fs-extra'
 import { PassThrough } from 'node:stream'
 import multiplexer, { cancelOperation } from '../backend/multiplexer.js'
 import GetFilesSize from '../backend/readFilesSize.js'
-import c from 'ansi-colors'
 
 jest.spyOn(updateUi, 'updateProgress').mockImplementation(() => { })
 
