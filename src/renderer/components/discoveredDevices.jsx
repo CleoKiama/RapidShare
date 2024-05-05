@@ -10,7 +10,6 @@ function DiscoveredDevices() {
 
   useEffect(() => {
     function listen(_, data) {
-      console.log(data)
       setDeviceData(data)
     }
     window.electron.on('updateDevices', listen)

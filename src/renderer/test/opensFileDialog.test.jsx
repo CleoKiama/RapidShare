@@ -1,7 +1,6 @@
-import c from 'ansi-colors'
 import userEvent from '@testing-library/user-event'
 import React from 'react'
-import { render, waitFor } from '@testing-library/react'
+import { act, render, waitFor } from '@testing-library/react'
 import DiscoveredDevices from '../components/discoveredDevices.jsx'
 import { EventEmitter } from 'node:events'
 
@@ -24,7 +23,6 @@ test('handles the file send button click', async () => {
 
   const openFileDialog = jest.fn(async (address, type) => {
     return new Promise((done) => {
-      console.log(`ready to send a ${type} to address : `, address)
       setTimeout(() => {
         done()
       }, 400)
@@ -39,16 +37,6 @@ test('handles the file send button click', async () => {
     },
   }
   const device = new EventEmitter()
-  setTimeout(() => {
-    device.emit(
-      'deviceFound',
-      {
-        eventId: '79374375835730',
-      },
-      foundDevices
-    )
-  }, 200)
-
   window.electron = {
     on: (channel, callback) => {
       device.on(channel, callback)
@@ -62,17 +50,29 @@ test('handles the file send button click', async () => {
     openFileDialog: (address, type) => ipcRenderer.invoke('dialog:openFile', address, type)
   }
   const { getByText, findByAltText } = render(<DiscoveredDevices />)
-  const deviceToClick = await findByAltText(/logo/)
-  await user.click(deviceToClick)
-  let fileDialogueOpennner = await getByText("file")
-  await waitFor(() => {
-    expect(fileDialogueOpennner).toBeInTheDocument()
+  await act(async () => {
+    device.emit(
+      'deviceFound',
+      {
+        eventId: '79374375835730',
+      },
+      foundDevices
+    )
   })
-  await user.click(fileDialogueOpennner)
+  const deviceToClick = await findByAltText(/logo/)
+  await act(async () => {
+    await user.click(deviceToClick)
+  })
+  let fileDialogOpenner = await getByText("file")
+  await waitFor(() => {
+    expect(fileDialogOpenner).toBeInTheDocument()
+  })
+  await act(async () => {
+    await user.click(fileDialogOpenner)
+  })
   expect(openFileDialog).toHaveBeenCalledWith('192.168.0.103', 'file')
-  fileDialogueOpennner = await getByText("folder")
-  await user.click(fileDialogueOpennner)
+  fileDialogOpenner = await getByText("folder")
+  await user.click(fileDialogOpenner)
   expect(openFileDialog).toHaveBeenCalledWith('192.168.0.103', 'file')
-
 })
 

@@ -1,8 +1,7 @@
 import React from 'react'
-import { render, } from '@testing-library/react'
+import { act, render, } from '@testing-library/react'
 import DiscoveredDevices from '../components/discoveredDevices.jsx'
 import { EventEmitter } from 'node:events'
-import { setTimeout as setTimeoutPromise } from 'node:timers/promises'
 
 let foundDevices = {
   devices: [
@@ -71,16 +70,6 @@ let foundDevices = {
 
 test('renders all the discovered devices', async () => {
   const device = new EventEmitter()
-  setTimeout(() => {
-    device.emit(
-      'updateDevices',
-      {
-        eventId: '79374375835730',
-      },
-      foundDevices
-    )
-  }, 300)
-
   window.electron = {
     on: (channel, callback) => {
       device.on(channel, callback)
@@ -93,6 +82,15 @@ test('renders all the discovered devices', async () => {
     }
   }
   const { findAllByAltText } = render(<DiscoveredDevices />)
+  await act(async () => {
+    device.emit(
+      'updateDevices',
+      {
+        eventId: '79374375835730',
+      },
+      foundDevices
+    )
+  })
   const deviceLogos = await findAllByAltText(/platform/i)
   deviceLogos.forEach((img, index) => {
     expect(img).toHaveAttribute(
@@ -106,16 +104,6 @@ test('renders all the discovered devices', async () => {
 test('updates when a device goes offline', async () => {
   const device = new EventEmitter()
   var onlineDevices = { devices: [] }
-  setTimeout(() => {
-    device.emit(
-      'updateDevices',
-      {
-        eventId: '7@E70',
-      },
-      foundDevices
-    )
-  }, 700)
-
   window.electron = {
     on: (channel, callback) => {
       device.on(channel, callback)
@@ -128,7 +116,17 @@ test('updates when a device goes offline', async () => {
     }
   }
   onlineDevices.devices = foundDevices.devices.slice(0, 3)
-  setTimeout(function() {
+  const { findAllByAltText } = render(<DiscoveredDevices />)
+  await act(async () => {
+    device.emit(
+      'updateDevices',
+      {
+        eventId: '7@E70',
+      },
+      foundDevices
+    )
+  })
+  await act(async () => {
     device.emit(
       'updateDevices',
       {
@@ -136,8 +134,7 @@ test('updates when a device goes offline', async () => {
       },
       onlineDevices
     )
-  }, 1200)
-  const { findAllByAltText } = render(<DiscoveredDevices />)
+  })
   const deviceLogos = await findAllByAltText(/platform/i)
   deviceLogos.forEach((img, index) => {
     expect(img).toHaveAttribute(

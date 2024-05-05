@@ -45,7 +45,9 @@ class TransferServer {
     this.server.on('connection', this.connectionListener)
   }
   publishServer() {
-    this.servicePublished = bonjour().publish(
+    this.servicePublished = bonjour({
+      loopback: false,
+    }).publish(
       {
         name: `${os.userInfo().username}_server`,
         type: 'http',

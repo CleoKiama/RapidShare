@@ -5,20 +5,15 @@ import { EventEmitter } from "node:events"
 import os from 'os'
 import userEvent from '@testing-library/user-event'
 import { setTimeout as setTimeoutPromise } from 'node:timers/promises'
+import { act } from "@testing-library/react"
 
 
 test('cancels the transfer of files', async () => {
   let ipcHandleSpy = jest.fn(async () => {
-    console.log('canceling')
     return
   })
   const user = userEvent.setup()
   const transferMonitor = new EventEmitter()
-  setTimeout(() => {
-    transferMonitor.emit('transferring', {
-      eventid: "1234142jIJ$%"
-    }, true)
-  }, 700)
   window.electron = {
     on: (channel, callback) => {
       transferMonitor.on(channel, callback)
@@ -40,27 +35,30 @@ test('cancels the transfer of files', async () => {
 
   }
   const { findByText } = render(<App />)
+  await act(async () => {
+    transferMonitor.emit('transferring', {
+      eventid: "1234142jIJ$%"
+    }, true)
+  })
   let initCancelBtn = await findByText('Cancel')
   expect(initCancelBtn).toBeInTheDocument()
-  await user.click(initCancelBtn)
+  await act(async () => {
+    await user.click(initCancelBtn)
+  })
   let confirmDeleteBTN = await findByText("Yes, Cancel Transfer")
   expect(confirmDeleteBTN).toBeInTheDocument()
-  await user.click(confirmDeleteBTN)
+  await act(async () => {
+    await user.click(confirmDeleteBTN)
+  })
   expect(ipcHandleSpy).toHaveBeenCalled()
 })
 
 test('attaches the listener to revert back the ui after a cancel', async () => {
   let ipcHandleSpy = jest.fn(async () => {
-    console.log('canceling')
     return
   })
   const user = userEvent.setup()
   const transferMonitor = new EventEmitter()
-  setTimeout(() => {
-    transferMonitor.emit('transferring', {
-      eventid: "1234142jIJ$%"
-    }, true)
-  }, 700)
   window.electron = {
     on: (channel, callback) => {
       transferMonitor.on(channel, callback)
@@ -82,17 +80,25 @@ test('attaches the listener to revert back the ui after a cancel', async () => {
 
   }
   const { findByText, findByAltText } = render(<App />)
-  const initCancelBtn = await findByText('Cancel')
-  await user.click(initCancelBtn)
-  let confirmDeleteBTN = await findByText("Yes, Cancel Transfer")
-  await user.click(confirmDeleteBTN)
-  const arrowBack = await findByAltText('navigate back')
-  expect(arrowBack).toBeInTheDocument()
-  setTimeout(() => {
+  await act(async () => {
     transferMonitor.emit('transferring', {
       eventid: "1234142jIJ$%"
     }, true)
-  }, 700)
-  await setTimeoutPromise(1000)
+  })
+  const initCancelBtn = await findByText('Cancel')
+  await act(async () => {
+    await user.click(initCancelBtn)
+  })
+  let confirmDeleteBTN = await findByText("Yes, Cancel Transfer")
+  await act(async () => {
+    await user.click(confirmDeleteBTN)
+  })
+  const arrowBack = await findByAltText('navigate back')
+  expect(arrowBack).toBeInTheDocument()
+  await act(async () => {
+    transferMonitor.emit('transferring', {
+      eventid: "1234142jIJ$%"
+    }, true)
+  })
   expect(arrowBack).not.toBeInTheDocument()
 })
