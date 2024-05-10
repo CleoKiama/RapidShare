@@ -2,6 +2,8 @@ import c from 'ansi-colors'
 import bonjour from "bonjour";
 import updateUi from "./updateUi.js";
 import { ipcMain } from 'electron';
+import { platform } from 'os'
+import thisMachineAddress from './currentAssignedAddress.js';
 
 class BonjourDeviceDiscovery {
   constructor() {
@@ -28,9 +30,12 @@ class BonjourDeviceDiscovery {
     this.browser.stop()
   }
   verifyDevices(deviceInfo) {
+    if (platform() === 'win32', deviceInfo.address === thisMachineAddress()) {
+      return console.log("matches thus returning")
+    }
     if (this.addDevice(deviceInfo)) {
+      console.log(deviceInfo)
       updateUi.updateDevices(this.foundDevices)
-      // this.stop()
     }
   }
   addDevice(deviceInfo) {
