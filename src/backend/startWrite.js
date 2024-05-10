@@ -3,13 +3,18 @@ import c from 'ansi-colors'
 import updateUi from "./updateUi.js";
 import TransferServer from './transferInterface.js'
 import transferProgress from "./transferProgress.js";
+// import { ipcMain } from "electron";
 
 export default async function startWrite(socket) {
   //Todo errror handling logic here 
+  // ipcMain.handleOnce('cancelTransfer', () => {
+  //      
+  // })
   try {
     updateUi.onTransferStart()
+    console.log(c.green("waiting for demux to finish...."))
     await Demultiplexer(socket)
-    socket.end()
+    console.log('demux all done')
     updateUi.onTransferEnd()
     transferProgress.cleanUp()
     TransferServer.addConnectionListener()
