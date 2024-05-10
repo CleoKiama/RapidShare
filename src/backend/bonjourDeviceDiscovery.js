@@ -57,6 +57,9 @@ class BonjourDeviceDiscovery {
   monitorDevices() {
     this.browser.on('down', (service) => {
       console.log(c.red(`we have a service that is down`))
+      if (platform() === 'win32' && service.txt.address === thisMachineAddress()) {
+        return
+      }
       console.log(service.txt)
       this.removeDevice(service.txt)
     })
