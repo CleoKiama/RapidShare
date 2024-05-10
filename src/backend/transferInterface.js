@@ -35,14 +35,18 @@ class TransferServer {
 
   }
   async connectionListener(socket) {
-    await startWrite(socket)
+    try {
+      this.server.removeListener('connection', this.connectionListener)
+      await startWrite(socket)
+    } catch (error) {
+      console.error(c.red(`error in connection listener trying to start write... ${error.message}`))
+    }
     // ** once called do not allow any more connections
     // this might change if we allow sending to more 
     // than one device at a time 
-    this.removeConnectionListener()
   }
   addConnectionListener() {
-    this.server.on('connection', this.connectionListener)
+    this.server.on('connection', this.connectionListener.bind(this))
   }
   publishServer() {
     this.servicePublished = bonjour({
@@ -62,9 +66,6 @@ class TransferServer {
   }
   unpublish() {
     this.servicePublished.stop()
-  }
-  removeConnectionListener() {
-    this.server.removeListener('connection', this.connectionListener)
   }
 
 }
