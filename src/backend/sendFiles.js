@@ -9,16 +9,30 @@ import { once } from 'events'
 import formatBytes from './formatBytes.js'
 import GetFilesSize from './readFilesSize.js'
 import TransferProgress from './transferProgress.js'
+import { cancelOperation } from './multiplexer.js'
+
+const transferController = new AbortController()
 
 export async function returnFileStream(rootPath, destination) {
+  const { signal } = transferController
   const relativePath = `/${path.basename(rootPath)}`
   return new Promise((resolve, reject) => {
-    const fileStream = createReadStream(rootPath)
+    const fileStream = createReadStream(rootPath, { signal })
     fileStream.on('data', (data) => {
       let progress = TransferProgress.setProgress(data.length)
       let packet = createPacket(relativePath, data, progress)
-      destination.write(packet)
+      // If write returns false, then the write buffer is full.
+      if (!destination.write(packet)) {
+        // Pause reading from fileStream
+        console.log("pausing waiting for the drain event ... ")
+        fileStream.pause();
+        destination.once('drain', () => {
+          console.log('drain event fired should resume the stream now ....')
+          fileStream.resume();
+        });
+      }
     })
+    // When the drain event is emitted, resume reading from fileStream
     fileStream.on('end', () => {
       const endMessage = Buffer.from('all done')
       destination.write(createPacket(relativePath, endMessage, 100), () => {
@@ -51,8 +65,14 @@ export async function establishConnection(clientPort, clientAddress) {
 
 }
 
+export const cancel = () => {
+  transferController.abort()
+  // cancelOperation()
+}
+
 export default async function transferFiles(rootPath, port, peerAdr) {
   try {
+    console.log('establishConnection....')
     var peerSocket = await establishConnection(
       port,
       peerAdr
@@ -67,20 +87,13 @@ export default async function transferFiles(rootPath, port, peerAdr) {
     console.error(
       `something went wrong sending the file error : ${error.message}`
     )
-    peerSocket.end(() => {
-      console.log(c.red('socket closed due to error'))
-    })
+    if (error.code === "ABORT_ERR")
+      peerSocket.destroy(error)
+    else throw error
   }
   console.log(c.green('all send operations done ending transferFiles now'))
   peerSocket.end(() => console.log('peer socket closed successfully'))
   //** add back the connection Listener when done */
-  //addConnectionListener()
+  //TODO addConnectionListener()
 }
-
-// transferFiles('/home/cleo/Pictures/logos', '192.168.0.109').then(() => {
-//   console.log(c.magentaBright("transferFiles all done sending them files"))
-// })
-// transferFiles('/run/media/cleo/Library/books/dev books', '192.168.0.109').then(() => {
-//   console.log(c.magentaBright("transferFiles all done sending them files"))
-// })
 
