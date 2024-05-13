@@ -1,12 +1,14 @@
 import c from 'ansi-colors'
-import DestinationResolver from './destinationResolver.js'
 import updateUi from './updateUi.js'
+import DestinationResolver from './destinationResolver.js'
 
 
 export default async function Demultiplexer(source) {
+  let writeToDisk = new DestinationResolver()
   let pendingWriteOperations = 0
   let currentLength = null
   let currentPath = null
+  let totalSizeReceived = 0
   source.on('readable', () => {
     let chunk
     if (currentLength === null) {
@@ -30,11 +32,12 @@ export default async function Demultiplexer(source) {
         contentBuffer = null
       } else chunk.copy(contentBuffer, 0, 2 + pathLength, chunk.length)
     if (contentBuffer) {
-      updateUi.updateProgress(progress, contentBuffer.length)
+      totalSizeReceived += contentBuffer.length
+      updateUi.updateProgress(progress, totalSizeReceived)
     } else updateUi.updateProgress(progress, 0)
     pendingWriteOperations += 1
     try {
-      DestinationResolver.saveToFileSystem(currentPath, contentBuffer).then(() => pendingWriteOperations -= 1)
+      writeToDisk.saveToFileSystem(currentPath, contentBuffer).then(() => pendingWriteOperations -= 1)
     } catch (error) {
       console.error(c.red(error.message))
     }
@@ -50,15 +53,15 @@ export default async function Demultiplexer(source) {
         if (pendingWriteOperations === 0) {
           clearInterval(interval)
           console.log(c.blue(`pending writeOperations at the time of exiting  ${pendingWriteOperations}`))
-          DestinationResolver.cleanUp()
+          writeToDisk.cleanUp()
           resolve()
         }
       }, 700)
     })
     source.once('error', (err) => {
       //TODO might need to do better cleanup here instead of just resolving
-      DestinationResolver.cleanUp()
-      reject('something went wrong')
+      writeToDisk.cleanUp()
+      reject('something went wrong demuxing ' + err.message)
     })
   })
 }
