@@ -19,6 +19,7 @@ class WindowAndListenerSetup {
     this.BrowserWindow.loadURL(MAIN_WINDOW_WEBPACK_ENTRY)
     //TODO  might need to remove this in production : Open the DevTools.
     this.BrowserWindow.webContents.openDevTools()
+    this.BrowserWindow.title = "RapidShare"
   }
   browserWindowRef() {
     return this.BrowserWindow

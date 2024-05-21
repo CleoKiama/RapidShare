@@ -67,7 +67,7 @@ export async function establishConnection(clientPort, clientAddress) {
 
 export const cancel = () => {
   transferController.abort()
-  // cancelOperation()
+  cancelOperation()
 }
 
 export default async function transferFiles(rootPath, port, peerAdr) {
