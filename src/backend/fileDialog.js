@@ -28,7 +28,7 @@ export default class HandleFileDialogLogic {
   }
   onFileSelect(filePaths, address, canceled) {
     if (!canceled) {
-      startSending.start(filePaths, address)
+      startSending(filePaths, address)
     }
   }
   setUpFileDialogue() {

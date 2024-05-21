@@ -1,5 +1,5 @@
-import formatBytes from "./formatBytes";
-import mainWindowSetup from "./mainWindowSetup";
+import formatBytes from "./formatBytes.js";
+import mainWindowSetup from "./mainWindowSetup.js";
 import c from 'ansi-colors'
 
 class UpdateUi {
@@ -16,13 +16,8 @@ class UpdateUi {
     webContents.send('transferring', false)
   }
   updateDevices(foundDevices) {
-    console.log('updateUi.js line 16')
-    console.log(foundDevices)
-    const { webContents } = mainWindowSetup.browserWindowRef()
-    setTimeout(() => {
-      console.log(c.magenta('updating ui after threshHold'))
-      webContents.send('deviceFound', foundDevices)
-    }, 3000);
+    const browserWindow = mainWindowSetup.browserWindowRef()
+    browserWindow.webContents.send('updateDevices', foundDevices)
   }
   updateProgress(percentageProgress, bytesTransferred) {
     const { webContents } = mainWindowSetup.browserWindowRef()
@@ -33,5 +28,6 @@ class UpdateUi {
     })
   }
 }
+
 
 export default new UpdateUi()

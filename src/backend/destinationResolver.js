@@ -1,10 +1,9 @@
 import fs from 'fs-extra'
-import c from 'ansi-colors'
 import { promisify } from 'util'
 import { config } from './appConfig.js'
 
 
-class DestinationResolver {
+export default class DestinationResolver {
   constructor() {
     this.pendingFiles = new Map()
     this.destinationPath = config.getDestinationPath()
@@ -57,4 +56,4 @@ class DestinationResolver {
   }
 }
 
-export default new DestinationResolver()
+// export default new DestinationResolver()

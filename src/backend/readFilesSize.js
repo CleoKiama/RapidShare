@@ -1,12 +1,11 @@
-import fastFolderSize from "fast-folder-size";
-import { promisify } from 'node:util';
+import { promisify } from 'util';
 import identifyPath from "./pathType.js";
 import fs from 'fs-extra';
+import getFolderSize from 'get-folder-size';
+import fastFolderSize from "fast-folder-size";
 
-const getFolderSize = async (path) => {
-  let asyncFastFolderSize = promisify(fastFolderSize)
-  return await asyncFastFolderSize(path)
-}
+const getFolderSizeAsync = promisify(getFolderSize);
+const asyncFastFolderSize = promisify(fastFolderSize);
 
 const getFileSize = async (path) => {
   const { size } = await fs.stat(path)
@@ -15,8 +14,16 @@ const getFileSize = async (path) => {
 
 async function GetFilesSize(path) {
   const { isDir } = await identifyPath(path)
-  if (isDir) return await getFolderSize(path)
-  else return await getFileSize(path)
+  if (isDir) {
+    if (process.platform === 'win32') {
+      return await getFolderSizeAsync(path)
+    } else {
+      return await asyncFastFolderSize(path)
+    }
+  } else {
+    return await getFileSize(path)
+  }
 }
 
 export default GetFilesSize
+

@@ -22,7 +22,7 @@ export function createPacket(path, chunk, progress) {
 
 export default async function multiplexer(rootPath, destination) {
   controller = new AbortController()
-  //for now a max concurrency of 3 files work 4 has problems 
+  //for now a max concurrency of 3 files works but 4 has problems 
   const fileGenerator = new GenerateFiles(rootPath, 2)
   const iterator = fileGenerator[Symbol.asyncIterator]()
   let iteratorResult = await iterator.next()
