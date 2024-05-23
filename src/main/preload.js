@@ -11,4 +11,5 @@ contextBridge.exposeInMainWorld('electron', {
     return ipcRenderer.invoke(channel)
   },
   openFileDialog: (address, type) => ipcRenderer.invoke('dialog:openFile', address, type),
+  openInExpoler: (path) => ipcRenderer.invoke('openInExplorer', path)
 })

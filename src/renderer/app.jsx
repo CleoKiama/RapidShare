@@ -6,15 +6,17 @@ import { ErrorBoundary } from 'react-error-boundary'
 import ThisDevice from './components/thisDevice.jsx'
 import DiscoveredDevices from './components/discoveredDevices.jsx'
 import TransferProgress from './components/transferProgress.jsx'
+import Settings from './components/settings.jsx'
 
 
 export default function App() {
   const [transferStart, setTransferStart] = useState(false)
+  const [navState, setNavState] = useState("devices")
   useEffect(() => {
     const listener = (_, status) => {
       setTransferStart(status)
     }
-    window.electron.on('transferring', listener)
+    window.electron.on("transferring", listener)
     return () => {
       window.electron.removeListener('transferring', listener)
     }
@@ -22,24 +24,36 @@ export default function App() {
   const HandleNavigationBack = () => {
     setTransferStart(false)
   }
+  const updateNav = (nav) => {
+    setNavState(nav)
+  }
   return (
     <ErrorBoundary fallbackRender={Fallback}>
-      <main className="mx-auto mt-4 max-h-fit  w-[474px]  rounded-2xl bg-grey-200 px-6 py-4 ">
+      <main className="mx-auto mt-4 h-full  min-w-[474px]  rounded-2xl bg-grey-200 px-6 py-4">
+        <h1 className='pl-4 font-semibold text-xl pb-1'>RapidShare</h1>
         <Container>
-          <header>
-            <h1>RapidShare</h1>
-          </header>
-          <Nav />
+          <Nav
+            navState={navState}
+            onNavUpdate={updateNav}
+          />
           {
-            transferStart ?
-              <TransferProgress
-                onNavigateBack={HandleNavigationBack}
-              />
-              :
-              <div>
-                <ThisDevice />
-                <DiscoveredDevices />
+            navState === "devices" ?
+              <div className='pl-4'>
+                {
+                  transferStart ?
+                    <TransferProgress
+                      onNavigateBack={HandleNavigationBack}
+                    />
+                    :
+                    <div>
+                      <ThisDevice />
+                      <DiscoveredDevices />
+                    </div>
+
+                }
               </div>
+              :
+              <Settings />
           }
         </Container>
       </main>

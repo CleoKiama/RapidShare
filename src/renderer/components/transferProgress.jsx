@@ -45,7 +45,7 @@ export default function TransferProgress({ onNavigateBack }) {
   }
   //TODO Get the actual DeviceName
   return (
-    <div className="w-48">
+    <div >
       {
         isCanceled &&
         <img
@@ -64,7 +64,7 @@ export default function TransferProgress({ onNavigateBack }) {
       </p>
       <Line
         strokeColor={strokeColor}
-        strokeWidth={20}
+        strokeWidth={10}
         strokeLinecap='square'
         percent={progress.percentageProgress}
       />
