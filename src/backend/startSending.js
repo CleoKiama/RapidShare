@@ -24,4 +24,3 @@ export default async function startSend(filePaths, addressToMatch) {
   }
 }
 
-

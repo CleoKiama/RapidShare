@@ -6,8 +6,9 @@ import { Transform } from 'stream'
 import { pipeline } from 'node:stream/promises'
 import TransferProgress from './transferProgress.js'
 import { promisify } from 'util'
+import { transferController } from './sendFiles.js'
 
-var controller
+var controller = transferController
 export function createPacket(path, chunk, progress) {
   const pathBuffer = Buffer.from(path)
   const packet = Buffer.alloc(4 + 1 + 1 + pathBuffer.length + (chunk ? chunk.length : 0))
@@ -21,7 +22,6 @@ export function createPacket(path, chunk, progress) {
 
 
 export default async function multiplexer(rootPath, destination) {
-  controller = new AbortController()
   //for now a max concurrency of 3 files works but 4 has problems 
   const fileGenerator = new GenerateFiles(rootPath, 2)
   const iterator = fileGenerator[Symbol.asyncIterator]()
@@ -93,9 +93,6 @@ function awaitSendPackets(rootPath, files, destination) {
   })
 }
 
-export const cancelOperation = () => {
-  controller.abort()
-}
 
 const sendFile = async (relativePath, sourceFile, destination) => {
   const transformToPacket = new Transform({

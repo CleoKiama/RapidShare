@@ -27,7 +27,6 @@ class TransferProgress {
       return 100;
     }
     updateUi.updateProgress(percentageProgress, this.currentlyTransferred);
-    console.log(percentageProgress)
     return percentageProgress;
   }
   setTotalSize(size) {

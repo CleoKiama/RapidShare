@@ -9,9 +9,8 @@ import { once } from 'events'
 import formatBytes from './formatBytes.js'
 import GetFilesSize from './readFilesSize.js'
 import TransferProgress from './transferProgress.js'
-import { cancelOperation } from './multiplexer.js'
 
-const transferController = new AbortController()
+export const transferController = new AbortController()
 
 export async function returnFileStream(rootPath, destination) {
   const { signal } = transferController
@@ -24,10 +23,8 @@ export async function returnFileStream(rootPath, destination) {
       // If write returns false, then the write buffer is full.
       if (!destination.write(packet)) {
         // Pause reading from fileStream
-        console.log("pausing waiting for the drain event ... ")
         fileStream.pause();
         destination.once('drain', () => {
-          console.log('drain event fired should resume the stream now ....')
           fileStream.resume();
         });
       }
@@ -67,7 +64,6 @@ export async function establishConnection(clientPort, clientAddress) {
 
 export const cancel = () => {
   transferController.abort()
-  cancelOperation()
 }
 
 export default async function transferFiles(rootPath, port, peerAdr) {
