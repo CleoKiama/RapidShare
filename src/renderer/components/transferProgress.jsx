@@ -20,15 +20,25 @@ export default function TransferProgress({ onNavigateBack }) {
         }
       })
     }
+    const onError = (_, error) => {
+      console.log("something went wrong")
+      console.log(error)
+      setIsCanceled(true)
+    }
     window.electron.on("fileProgress", listener)
-    return () => window.electron.removeListener("fileProgress", listener)
+    window.electron.on("error", onError)
+    return () => {
+      window.electron.removeListener("fileProgress", listener)
+      window.electron.removeListener("error", onError)
+    }
   }, [])
   useEffect(() => {
     if (isCanceled) {
+      // once it is cancel start listening incase a new trasfer starts and reset the ui to update
       const listener = (_, status) => {
-        if (!status) throw new Error("status in this case should be false")
         setIsCanceled(false)
         setStrokeColor('blue')
+        setProgress({ percentageProgress: 0, bytesTransferred: 0 })
       }
       window.electron.on('transferring', listener)
       return () => {
@@ -43,6 +53,7 @@ export default function TransferProgress({ onNavigateBack }) {
     setIsCanceled(true)
     setStrokeColor('red')
   }
+
   //TODO Get the actual DeviceName
   return (
     <div >

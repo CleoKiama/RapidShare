@@ -6,9 +6,8 @@ import { Transform } from 'stream'
 import { pipeline } from 'node:stream/promises'
 import TransferProgress from './transferProgress.js'
 import { promisify } from 'util'
-import { transferController } from './sendFiles.js'
+import { transferController as controller } from './abortController.js'
 
-var controller = transferController
 export function createPacket(path, chunk, progress) {
   const pathBuffer = Buffer.from(path)
   const packet = Buffer.alloc(4 + 1 + 1 + pathBuffer.length + (chunk ? chunk.length : 0))

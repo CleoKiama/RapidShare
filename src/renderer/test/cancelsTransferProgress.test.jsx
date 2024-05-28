@@ -4,7 +4,6 @@ import { render } from '@testing-library/react'
 import { EventEmitter } from "node:events"
 import os from 'os'
 import userEvent from '@testing-library/user-event'
-import { setTimeout as setTimeoutPromise } from 'node:timers/promises'
 import { act } from "@testing-library/react"
 
 

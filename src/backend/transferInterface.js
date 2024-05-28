@@ -36,6 +36,7 @@ class TransferServer {
   }
   async connectionListener(socket) {
     // this.server.removeListener('connection', this.connectionListener)
+    console.log('send connection arrived ...')
     startWrite(socket)
   }
   addConnectionListener() {

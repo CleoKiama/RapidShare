@@ -17,6 +17,7 @@ class UpdateUi {
   }
   updateDevices(foundDevices) {
     const browserWindow = mainWindowSetup.browserWindowRef()
+    console.log(c.green('updating devices'), foundDevices)
     browserWindow.webContents.send('updateDevices', foundDevices)
   }
   updateProgress(percentageProgress, bytesTransferred) {

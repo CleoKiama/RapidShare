@@ -88,7 +88,7 @@ test("mux and demux work and update the progress", async () => {
 })
 
 
-describe.only("Updates the progress even for empty directories or files", () => {
+describe("Updates the progress even for empty directories or files", () => {
   let emptyDirSource = `${os.tmpdir()}/emptyDirTest`
   beforeEach(() => {
     fs.removeSync(emptyDirSource)

@@ -15,6 +15,7 @@ class BonjourDeviceDiscovery {
         ...service.txt,
         port: service.port,
       }
+      console.log(c.green("we have a device online"))
       this.verifyDevices(deviceInfo)
     })
     this.monitorDevices()
@@ -24,13 +25,17 @@ class BonjourDeviceDiscovery {
     return this.foundDevices
   }
   start() {
-    this.browser.start()
+    try {
+      this.browser.start()
+    } catch (error) {
+      console.error('something went wrong starting the bonjour find service')
+    }
   }
   stop() {
     this.browser.stop()
   }
   verifyDevices(deviceInfo) {
-    if (platform() === 'win32', deviceInfo.address === thisMachineAddress()) {
+    if (platform() === 'win32' && deviceInfo.address === thisMachineAddress()) {
       return console.log("matches thus returning")
     }
     if (this.addDevice(deviceInfo)) {
@@ -52,6 +57,7 @@ class BonjourDeviceDiscovery {
   removeDevice(offlineDevice) {
     let onlineDevices = this.foundDevices.devices.filter((device) => offlineDevice.address !== device.address)
     this.foundDevices.devices = onlineDevices
+    console.log(this.foundDevices)
     updateUi.updateDevices(this.foundDevices)
   }
   monitorDevices() {

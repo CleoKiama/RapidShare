@@ -7,8 +7,9 @@ import Demultiplexer from '../backend/demultiplexer.js'
 import os from 'node:os'
 import fs from 'fs-extra'
 import { PassThrough } from 'node:stream'
-import multiplexer, { cancelOperation } from '../backend/multiplexer.js'
+import multiplexer from '../backend/multiplexer.js'
 import GetFilesSize from '../backend/readFilesSize.js'
+import { cancel as cancelOperation } from '../backend/sendFiles.js'
 
 jest.spyOn(updateUi, 'updateProgress').mockImplementation(() => { })
 
@@ -77,6 +78,8 @@ test("cancels multiplexer when aborted", async () => {
 
 
 describe('cancels for empty directories', () => {
+  let sourcePath = "/tmp/homepc"
+  let destinationPath = "/tmp/userme/Downloads"
   beforeEach(() => {
     fs.removeSync(sourcePath)
     fs.removeSync((destinationPath))
@@ -112,7 +115,7 @@ test("Demux cleans up and rejects on abort", async () => {
     cancelOperation()
   }, 200)
   multiplexer(sourcePath, transferInterface).catch((error) => {
-    //rememeber to call destry in transferInterface
+    //TODO rememeber to call destroy in transferInterface
     transferInterface.destroy(error)
   })
   const errorSpy = jest.fn((error) => {

@@ -9,8 +9,9 @@ import { once } from 'events'
 import formatBytes from './formatBytes.js'
 import GetFilesSize from './readFilesSize.js'
 import TransferProgress from './transferProgress.js'
+import { transferController } from './abortController.js'
 
-export const transferController = new AbortController()
+
 
 export async function returnFileStream(rootPath, destination) {
   const { signal } = transferController
