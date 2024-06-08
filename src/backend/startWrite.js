@@ -15,11 +15,16 @@ export default async function startWrite(socket) {
   try {
     updateUi.onTransferStart()
     console.log(c.green("waiting for demux to finish...."))
-    await Demultiplexer(socket)
-    console.log('demux all done')
-    updateUi.onTransferEnd()
-    transferProgress.cleanUp()
-    TransferServer.addConnectionListener()
+    Demultiplexer(socket, (error) => {
+      if (error) {
+        console.log(c.red("something went wrong with the dmux error below"))
+        return console.error(error)
+      }
+      console.log('demux all done')
+      updateUi.onTransferEnd()
+      transferProgress.cleanUp()
+      TransferServer.addConnectionListener()
+    })
   } catch (error) {
     console.error(c.red(`something went wrong demuxing ${error.message}`))
   }

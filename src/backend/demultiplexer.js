@@ -1,15 +1,26 @@
 import c from 'ansi-colors'
-import updateUi from './updateUi.js'
+import formatBytes from './formatBytes.js'
 import DestinationResolver from './destinationResolver.js'
 
 
-export default async function Demultiplexer(source) {
+export default function Demultiplexer(source, callback) {
   let writeToDisk = new DestinationResolver()
   let pendingWriteOperations = 0
   let currentLength = null
   let currentPath = null
   let totalSizeReceived = 0
-  source.on('readable', () => {
+  let readableEnded = false
+  source.on('end', () => {
+    console.log(c.green("socket ended checking for pending write operations"))
+    readableEnded = true
+    if (pendingWriteOperations === 0) {
+      writeToDisk.cleanUp()
+      callback(null)
+    } else
+      console.log(c.magentaBright('The socket end event fired waiting for pending write operations'))
+  })
+
+  const handleReadable = () => {
     let chunk
     if (currentLength === null) {
       chunk = source.read(4)
@@ -33,35 +44,35 @@ export default async function Demultiplexer(source) {
       } else chunk.copy(contentBuffer, 0, 2 + pathLength, chunk.length)
     if (contentBuffer) {
       totalSizeReceived += contentBuffer.length
-      updateUi.updateProgress(progress, totalSizeReceived)
-    } else updateUi.updateProgress(progress, 0)
+      let formattedSize = formatBytes(totalSizeReceived)
+      console.log(c.green(`progress :${progress} total : ${formattedSize}`))
+    } else console.log(c.red("content buffer is null"))
     pendingWriteOperations += 1
-    try {
-      writeToDisk.saveToFileSystem(currentPath, contentBuffer).then(() => pendingWriteOperations -= 1)
-    } catch (error) {
-      console.error(c.red(error.message))
-    }
+    writeToDisk.saveToFileSystem(currentPath, contentBuffer, (error) => {
+      if (error) return callback(error)
+      pendingWriteOperations -= 1
+      if (readableEnded && pendingWriteOperations === 0) {
+        writeToDisk.cleanUp()
+        callback(null)
+      } else {
+        if (pendingWriteOperations === 0) {
+          console.log(c.yellow("No pendingWriteOperations but the socket end event not fired yet"))
+          process.nextTick(handleReadable)
+        }
+
+      }
+    })
+
     currentLength = null
     currentPath = null
+  }
+  source.on('readable', handleReadable)
+  source.once('error', (err) => {
+    //TODO might need to do better cleanup here instead of just resolving
+    writeToDisk.cleanUp()
+    console.error(('something went wrong demuxing ' + err.message))
+    callback(err)
   })
 
-  return new Promise((resolve, reject) => {
-    source.once('end', () => {
-      console.log(c.magentaBright('The socket end event fired waiting for pending write operations'))
-      // remember to handle pending write operations
-      let interval = setInterval(() => {
-        if (pendingWriteOperations === 0) {
-          clearInterval(interval)
-          console.log(c.blue(`pending writeOperations at the time of exiting  ${pendingWriteOperations}`))
-          writeToDisk.cleanUp()
-          resolve()
-        }
-      }, 700)
-    })
-    source.once('error', (err) => {
-      //TODO might need to do better cleanup here instead of just resolving
-      writeToDisk.cleanUp()
-      reject('something went wrong demuxing ' + err.message)
-    })
-  })
 }
+

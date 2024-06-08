@@ -1,5 +1,4 @@
 import fs from 'fs-extra'
-import { promisify } from 'util'
 import { config } from './appConfig.js'
 
 
@@ -10,44 +9,46 @@ export default class DestinationResolver {
     // TODO add the destinationPath here for mocks of the module to work 
   }
 
-  async writeToDestination(destinationPath, dataBuffer) {
+  writeToDestination(destinationPath, dataBuffer, callback) {
     let fileStream
-    let writeAsync
     if (this.pendingFiles.has(destinationPath)) {
       fileStream = this.pendingFiles.get(destinationPath)
-      writeAsync = promisify(fileStream.write).bind(fileStream)
-      return await writeAsync(dataBuffer)
+      fileStream.write(dataBuffer, callback)
+    } else {
+      this.createFileIfNotExists(destinationPath)
+      //await fs.ensureFile(destinationPath)
+      fileStream = fs.createWriteStream(destinationPath)
+      this.pendingFiles.set(destinationPath, fileStream)
+      fileStream.write(dataBuffer, callback)
     }
-    this.createFileIfNotExists(destinationPath)
-    //await fs.ensureFile(destinationPath)
-    fileStream = fs.createWriteStream(destinationPath)
-    writeAsync = promisify(fileStream.write).bind(fileStream)
-    this.pendingFiles.set(destinationPath, fileStream)
-    await writeAsync(dataBuffer)
   }
 
   createFileIfNotExists(filePath) {
     return fs.ensureFileSync(filePath)
   }
 
-  createDirectoryIfNotExists(directoryPath) {
-    return fs.ensureDir(directoryPath)
+  createDirectoryIfNotExists(directoryPath, callback) {
+    return fs.ensureDir(directoryPath, callback)
   }
 
-  async saveToFileSystem(relativePath, dataBuffer) {
+  saveToFileSystem(relativePath, dataBuffer, callback) {
     const fullPath = `${this.destinationPath}${relativePath.toString()}`
     const endOfFile = Buffer.from('all done')
-    if (dataBuffer === null)
-      return this.createDirectoryIfNotExists(fullPath)
+    if (dataBuffer === null) return this.createDirectoryIfNotExists(fullPath, callback)
     if (dataBuffer.length === endOfFile.length && dataBuffer.compare(endOfFile) === 0) {
       if (this.pendingFiles.has(fullPath)) {
         let pendingStream = this.pendingFiles.get(fullPath)
-        return pendingStream.end()
-      } else
-        return Promise.reject(new Error('all done message received for file not in pending streams list'))
+        return pendingStream.end(callback)
+      } else return callback(new Error('No pending file found'))
     }
-    await this.writeToDestination(fullPath, dataBuffer)
+    this.writeToDestination(fullPath, dataBuffer, (error) => {
+      if (error) {
+        this.cleanUp()
+        callback(error)
+      } else callback(null)
+    })
   }
+  // This clean up might not be necessary since I always use a new instance of this class
   cleanUp() {
     Array.from(this.pendingFiles).map(value => {
       value[1].end()
@@ -56,4 +57,3 @@ export default class DestinationResolver {
   }
 }
 
-// export default new DestinationResolver()

@@ -88,7 +88,7 @@ export default async function transferFiles(rootPath, port, peerAdr) {
       peerSocket.destroy(error)
     else throw error
   }
-  console.log(c.green('all send operations done ending transferFiles now'))
+  console.log(c.cyan('all send operations done ending transferFiles now'))
   peerSocket.end(() => console.log('peer socket closed successfully'))
   //** add back the connection Listener when done */
   //TODO addConnectionListener()

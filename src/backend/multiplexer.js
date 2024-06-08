@@ -3,10 +3,10 @@ import GenerateFiles from './generateFiles.js'
 import path from 'path'
 import { once } from 'node:events'
 import { Transform } from 'stream'
-import { pipeline } from 'node:stream/promises'
 import TransferProgress from './transferProgress.js'
-import { promisify } from 'util'
 import { transferController as controller } from './abortController.js'
+import c from 'ansi-colors'
+import { pipeline } from 'stream/promises'
 
 export function createPacket(path, chunk, progress) {
   const pathBuffer = Buffer.from(path)
@@ -35,9 +35,12 @@ export default async function multiplexer(rootPath, destination) {
       iteratorResult = await iterator.next()
       continue
     }
+    console.log(c.blue("awaiting a batch to be sent"))
     await awaitSendPackets(rootPath, iteratorResult.value, destination)
+    console.log(c.green("batch sent moving on to the next one"))
     iteratorResult = await iterator.next()
   }
+  console.log(c.greenBright("all batches sent finishing the mux now"))
 }
 
 const sendEmptyDirPacket = async (rootPath, emptyDirPath, destination) => {
@@ -72,45 +75,46 @@ const sendEmptyDirPacket = async (rootPath, emptyDirPath, destination) => {
   })
 }
 
-function awaitSendPackets(rootPath, files, destination) {
-
+async function awaitSendPackets(rootPath, files, destination) {
   let sources = createStreamSources(files)
-  let pendingWritingOperations = []
-  return new Promise((resolve, reject) => {
-    // ** files will always be four files unless changed
-    while (files.length > 0) {
-      const currentSource = sources.shift()
-      const currentPath = files.shift()
-      //TODO want to change this to forEach 
-      if (!currentPath) return
-      const basename = path.basename(rootPath)
-      const relativePath = `/${basename}${currentPath.substring(rootPath.length)}`
-      let sendFilePromise = sendFile(relativePath, currentSource, destination)
-      pendingWritingOperations.push(sendFilePromise)
-    }
-    Promise.all(pendingWritingOperations).then(resolve, reject)
-  })
+  // let pendingWritingOperations = []
+  // ** files will always be four files unless changed
+  while (files.length > 0) {
+    const currentSource = sources.shift()
+    const currentPath = files.shift()
+    //TODO want to change this to forEach 
+    if (!currentPath) return
+    const basename = path.basename(rootPath)
+    const relativePath = `/${basename}${currentPath.substring(rootPath.length)}`
+    // let sendFilePromise = sendFile(relativePath, currentSource, destination)
+    console.log(c.blue("sending a file"))
+    await sendFile(relativePath, currentSource, destination)
+    console.log(c.blue("sending a done moving to the next"))
+    // pendingWritingOperations.push(sendFilePromise)
+  }
+  console.log("batch of files sent resolving now")
+  // await Promise.all(pendingWritingOperations)
 }
 
 
 const sendFile = async (relativePath, sourceFile, destination) => {
+  let progress;
   const transformToPacket = new Transform({
-    transform(chunk, encoding, callback) {
-      let progress = TransferProgress.setProgress(chunk.length)
-      let packet = createPacket(relativePath, chunk, progress)
+    transform(chunk, _, callback) {
+      progress = TransferProgress.setProgress(chunk.length);
+      let packet = createPacket(relativePath, chunk, progress);
       this.push(packet)
-      callback()
+      callback();
+    },
+    flush(cb) {
+      console.log("sending the all done message");
+      const endOfFileMessage = 'all done';
+      let finalPacket = createPacket(relativePath, Buffer.from(endOfFileMessage), 100);
+      cb(null, finalPacket)
     }
-  })
+  });
   await pipeline(sourceFile, transformToPacket, destination, {
     signal: controller.signal,
     end: false
   })
-
-  const endOfFileMessage = 'all done'
-  let awaitWrite = promisify(destination.write.bind(destination))
-  await awaitWrite(createPacket(relativePath, Buffer.from(endOfFileMessage), 100))
-
-}
-
-
+};

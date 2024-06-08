@@ -6,8 +6,8 @@ export default function createStreamSources(files) {
   for (const file of files) {
     sources.push(
       new lazystream.Readable(() => {
-        return createReadStream(file,{
-           highWaterMark : 1024 * 54
+        return createReadStream(file, {
+          highWaterMark: 1024 * 16
         });
       })
     );
