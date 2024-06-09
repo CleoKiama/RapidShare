@@ -35,9 +35,7 @@ export default async function multiplexer(rootPath, destination) {
       iteratorResult = await iterator.next()
       continue
     }
-    console.log(c.blue("awaiting a batch to be sent"))
     await awaitSendPackets(rootPath, iteratorResult.value, destination)
-    console.log(c.green("batch sent moving on to the next one"))
     iteratorResult = await iterator.next()
   }
   console.log(c.greenBright("all batches sent finishing the mux now"))
@@ -70,7 +68,7 @@ const sendEmptyDirPacket = async (rootPath, emptyDirPath, destination) => {
     let drain = destination.write(createPacket(relativePath, null, progress), (err) => {
       if (err) return Promise.reject(err)
     })
-    if (!drain) once(destination, 'drain').then(resolve)
+    if (!drain) once(destination, 'drain').then(resolve).catch(reject)
     else resolve()
   })
 }

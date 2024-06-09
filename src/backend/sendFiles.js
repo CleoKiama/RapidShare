@@ -84,9 +84,11 @@ export default async function transferFiles(rootPath, port, peerAdr) {
     console.error(
       `something went wrong sending the file error : ${error.message}`
     )
-    if (error.code === "ABORT_ERR")
-      peerSocket.destroy(error)
-    else throw error
+    if (error.code === "ABORT_ERR") peerSocket.destroy(error)
+    else {
+      peerSocket.destroy()
+      throw error
+    }
   }
   console.log(c.cyan('all send operations done ending transferFiles now'))
   peerSocket.end(() => console.log('peer socket closed successfully'))

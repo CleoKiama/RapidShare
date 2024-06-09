@@ -6,7 +6,6 @@ class UpdateUi {
 
   onTransferStart() {
     const { webContents } = mainWindowSetup.browserWindowRef()
-    console.log(c.magenta('sending transferring event now'))
     webContents.send('transferring', true)
   }
   onTransferEnd() {
@@ -15,9 +14,12 @@ class UpdateUi {
     const { webContents } = mainWindowSetup.browserWindowRef()
     webContents.send('transferring', false)
   }
+  onError(error) {
+    const { webContents } = mainWindowSetup.browserWindowRef()
+    webContents.send('error', error)
+  }
   updateDevices(foundDevices) {
     const browserWindow = mainWindowSetup.browserWindowRef()
-    console.log(c.green('updating devices'), foundDevices)
     browserWindow.webContents.send('updateDevices', foundDevices)
   }
   updateProgress(percentageProgress, bytesTransferred) {
