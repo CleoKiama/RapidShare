@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react'
 import { Line } from 'rc-progress'
 import { CancelTransferModel } from './cancelModal.jsx'
-import clsx from 'clsx'
 import PropTypes from 'prop-types'
+import TransferProgressCanceled from './transferProgressCanceled.jsx'
+import TransferProgressError from './transferProgressError.jsx'
 
 export default function TransferProgress({ onNavigateBack }) {
-  const [strokeColor, setStrokeColor] = useState('blue')
   const [isCanceled, setIsCanceled] = useState(false)
+  const [error, setError] = useState(false)
   const [progress, setProgress] = useState({
     percentageProgress: 0,
     bytesTransferred: 0
@@ -23,7 +24,7 @@ export default function TransferProgress({ onNavigateBack }) {
     const onError = (_, error) => {
       console.log("something went wrong")
       console.log(error)
-      setIsCanceled(true)
+      setError(true)
     }
     window.electron.on("fileProgress", listener)
     window.electron.on("error", onError)
@@ -33,11 +34,12 @@ export default function TransferProgress({ onNavigateBack }) {
     }
   }, [])
   useEffect(() => {
-    if (isCanceled) {
-      // once it is cancel start listening incase a new trasfer starts and reset the ui to update
+    if (isCanceled, error) {
+      // once it is cancel start listening incase a new transfer starts and reset the ui to update
       const listener = (_, status) => {
+        console.log(status)
         setIsCanceled(false)
-        setStrokeColor('blue')
+        setError(false)
         setProgress({ percentageProgress: 0, bytesTransferred: 0 })
       }
       window.electron.on('transferring', listener)
@@ -46,44 +48,44 @@ export default function TransferProgress({ onNavigateBack }) {
       }
     }
 
-  }, [isCanceled])
+  }, [isCanceled, error])
 
   const handleCancel = async () => {
     await window.electron.invoke('cancelTransfer')
     setIsCanceled(true)
-    setStrokeColor('red')
   }
 
   //TODO Get the actual DeviceName
+  if (error) {
+    return <TransferProgressError
+      onNavigateBack={onNavigateBack}
+      progress={progress}
+    />
+  }
   return (
-    <div >
+    <>
       {
-        isCanceled &&
-        <img
-          onClick={onNavigateBack}
-          src='static://assets/arrow_back.svg'
-          alt='navigate back'
-        />
+        isCanceled ?
+          <TransferProgressCanceled
+            onNavigateBack={onNavigateBack}
+            progress={progress}
+          /> :
+          <div >
+            <h5>sending files to deviceName</h5>
+            <p className='text-gray-700' >{progress.bytesTransferred} </p>
+            <Line
+              strokeColor='blue'
+              strokeWidth={10}
+              strokeLinecap='square'
+              percent={progress.percentageProgress}
+            />
+            {
+              !isCanceled &&
+              <CancelTransferModel onCancel={handleCancel} />
+            }
+          </div>
       }
-      {
-        isCanceled ? <p>Transfer Canceled</p> :
-          <h5>sending files to deviceName</h5>
-      }
-      <p
-        className={clsx(isCanceled ? 'text-red-700' : 'text-gray-700')}
-      >{progress.bytesTransferred}
-      </p>
-      <Line
-        strokeColor={strokeColor}
-        strokeWidth={10}
-        strokeLinecap='square'
-        percent={progress.percentageProgress}
-      />
-      {
-        !isCanceled &&
-        <CancelTransferModel onCancel={handleCancel} />
-      }
-    </div>
+    </>
   )
 }
 
