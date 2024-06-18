@@ -6,44 +6,31 @@ import multiplexer from './multiplexer.js'
 import { createReadStream } from 'node:fs'
 import c from 'ansi-colors'
 import { once } from 'events'
-import formatBytes from './formatBytes.js'
 import GetFilesSize from './readFilesSize.js'
 import TransferProgress from './transferProgress.js'
 import { transferController } from './abortController.js'
-
+import { pipeline } from 'stream/promises'
+import { Transform } from 'stream'
 
 
 export async function returnFileStream(rootPath, destination) {
   const { signal } = transferController
   const relativePath = `/${path.basename(rootPath)}`
-  return new Promise((resolve, reject) => {
-    const fileStream = createReadStream(rootPath, { signal })
-    fileStream.on('data', (data) => {
-      let progress = TransferProgress.setProgress(data.length)
-      let packet = createPacket(relativePath, data, progress)
-      // If write returns false, then the write buffer is full.
-      if (!destination.write(packet)) {
-        // Pause reading from fileStream
-        fileStream.pause();
-        destination.once('drain', () => {
-          fileStream.resume();
-        });
-      }
-    })
-    // When the drain event is emitted, resume reading from fileStream
-    fileStream.on('end', () => {
+  const prepare_for_send = new Transform({
+    transform(chunk, _, cb) {
+      let progress = TransferProgress.setProgress(chunk.length)
+      let packet = createPacket(relativePath, chunk, progress)
+      this.push(packet)
+      cb()
+    },
+    flush(cb) {
       const endMessage = Buffer.from('all done')
-      destination.write(createPacket(relativePath, endMessage, 100), () => {
-        console.log(
-          c.green(
-            `total size of file sent ${formatBytes(destination.bytesWritten)}`
-          )
-        )
-        resolve()
-      })
-    })
-    fileStream.on('error', reject)
+      this.push(createPacket(relativePath, endMessage, 100))
+      cb()
+    }
   })
+  const fileStream = createReadStream(rootPath)
+  await pipeline(fileStream, prepare_for_send, destination, { signal })
 }
 
 export async function establishConnection(clientPort, clientAddress) {
@@ -93,6 +80,5 @@ export default async function transferFiles(rootPath, port, peerAdr) {
   console.log(c.cyan('all send operations done ending transferFiles now'))
   peerSocket.end(() => console.log('peer socket closed successfully'))
   //** add back the connection Listener when done */
-  //TODO addConnectionListener()
 }
 
