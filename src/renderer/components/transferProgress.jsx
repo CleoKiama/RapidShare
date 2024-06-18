@@ -22,8 +22,6 @@ export default function TransferProgress({ onNavigateBack }) {
       })
     }
     const onError = (_, error) => {
-      console.log("something went wrong")
-      console.log(error)
       setError(true)
     }
     window.electron.on("fileProgress", listener)
@@ -34,7 +32,7 @@ export default function TransferProgress({ onNavigateBack }) {
     }
   }, [])
   useEffect(() => {
-    if (isCanceled, error) {
+    if (isCanceled || error) {
       // once it is cancel start listening incase a new transfer starts and reset the ui to update
       const listener = (_, status) => {
         console.log(status)

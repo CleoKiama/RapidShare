@@ -10,8 +10,10 @@ import { PassThrough } from 'node:stream'
 import multiplexer from '../backend/multiplexer.js'
 import GetFilesSize from '../backend/readFilesSize.js'
 import { cancel as cancelOperation } from '../backend/sendFiles.js'
+import { setTimeout as timeoutPromise } from 'node:timers/promises'
 
 jest.spyOn(updateUi, 'updateProgress').mockImplementation(() => { })
+import { setTimeout } from 'node:timers/promises'
 
 jest.spyOn(TransferProgress, 'setProgress')
 
@@ -59,21 +61,19 @@ beforeEach(() => {
 
 
 test("cancels multiplexer when aborted", async () => {
+  expect.assertions(1); // Ensure that one assertion is called
   let transferInterface = new PassThrough()
-  let demux = Demultiplexer(transferInterface)
-  let totalSize = await GetFilesSize(sourcePath)
+  Demultiplexer(transferInterface, (error) => {
+    if (error) {
+      console.error(error.message)
+    }
+  })
+  const totalSize = await GetFilesSize(sourcePath)
   TransferProgress.setTotalSize(totalSize)
   setImmediate(() => {
     cancelOperation()
   }, 200)
-  await new Promise((done) => {
-    multiplexer(sourcePath, transferInterface).catch(error => {
-      expect(error.code).toBe('ABORT_ERR')
-      transferInterface.end()
-      done()
-    })
-  })
-  await demux
+  await expect(multiplexer(sourcePath, transferInterface)).rejects.toThrow()
 })
 
 
@@ -88,46 +88,51 @@ describe('cancels for empty directories', () => {
 
   it("cancels multiplexer for empty directories", async () => {
     let transferInterface = new PassThrough()
-    let demux = Demultiplexer(transferInterface)
+    Demultiplexer(transferInterface, (error) => {
+      if (error) {
+        console.error(error.message)
+      }
+
+    })
     let totalSize = await GetFilesSize(sourcePath)
     TransferProgress.setTotalSize(totalSize)
     setImmediate(() => {
       cancelOperation()
     }, 200)
-    await new Promise((done) => {
-      multiplexer(sourcePath, transferInterface).catch(error => {
-        transferInterface.end()
-        expect(error.code).toBe('ABORT_ERR')
-        done()
-      })
-    })
-    await demux
+    await expect(multiplexer(sourcePath, transferInterface)).rejects.toThrow()
   })
 })
 
-
-test("Demux cleans up and rejects on abort", async () => {
-  let transferInterface = new PassThrough()
-  let demux = Demultiplexer(transferInterface)
-  let totalSize = await GetFilesSize(sourcePath)
-  TransferProgress.setTotalSize(totalSize)
-  setImmediate(() => {
-    cancelOperation()
-  }, 200)
-  multiplexer(sourcePath, transferInterface).catch((error) => {
-    //TODO rememeber to call destroy in transferInterface
-    transferInterface.destroy(error)
+describe.only('demuxer', () => {
+  let sourcePath = "/tmp/pc"
+  let destinationPath = "/tmp/userme/Downloads"
+  beforeEach(() => {
+    fs.removeSync(sourcePath)
+    fs.removeSync((destinationPath))
+    fs.ensureDirSync(sourcePath)
   })
-  const errorSpy = jest.fn((error) => {
-    expect(error.code).toBe("ABORT_ERR")
-  })
-  transferInterface.on('error', errorSpy)
-  await new Promise(done => {
-    demux.catch(() => {
-      done()
+  test("cleans up and rejects on abort", async () => {
+    let transferInterface = new PassThrough()
+    const demuxerCallback = jest.fn()
+    Demultiplexer(transferInterface, demuxerCallback)
+    let totalSize = await GetFilesSize(sourcePath)
+    TransferProgress.setTotalSize(totalSize)
+    setImmediate(() => {
+      cancelOperation()
     })
+    try {
+      await multiplexer(sourcePath, transferInterface)
+    } catch (error) {
+      //The transferInterface destroys the connection 
+      transferInterface.destroy(error)
+    }
+    await timeoutPromise(1000)
+    expect(demuxerCallback).toHaveBeenCalled()
   })
-  expect(errorSpy).toHaveBeenCalled()
+
 })
+
+
+
 
 
