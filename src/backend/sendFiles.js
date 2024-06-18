@@ -32,31 +32,16 @@ export async function returnFileStream(rootPath, destination, controller) {
   await pipeline(fileStream, prepare_for_send, destination, { signal })
 }
 
-export async function establishConnection(clientPort, clientAddress) {
-  let clientSocket = createConnection({
-    port: clientPort,
-    host: clientAddress,
-    keepAlive: true,
-  })
-  console.log(c.blue(`waiting for a connection to peer ${clientAddress}`))
-  return new Promise((resolve, reject) => {
-    clientSocket.once('error', reject)
-    once(clientSocket, 'connect').then(() => {
-      console.log(c.green(`connected to peer ${clientAddress}`))
-      resolve(clientSocket)
-    })
-  })
-
-}
-
 
 export default async function transferFiles(rootPath, port, peerAdr, controller) {
   try {
+    var peerSocket = createConnection({
+      port: port,
+      host: peerAdr,
+      keepAlive: true,
+    })
     console.log('establishConnection....')
-    var peerSocket = await establishConnection(
-      port,
-      peerAdr
-    )
+    await once(peerSocket, 'connect')
     let totalSize = await GetFilesSize(rootPath)
     TransferProgress.setTotalSize(totalSize)
     const { isDir } = await identifyPath(rootPath)
