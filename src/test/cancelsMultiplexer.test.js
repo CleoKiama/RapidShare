@@ -9,11 +9,9 @@ import fs from 'fs-extra'
 import { PassThrough } from 'node:stream'
 import multiplexer from '../backend/multiplexer.js'
 import GetFilesSize from '../backend/readFilesSize.js'
-import { cancel as cancelOperation } from '../backend/sendFiles.js'
 import { setTimeout as timeoutPromise } from 'node:timers/promises'
 
 jest.spyOn(updateUi, 'updateProgress').mockImplementation(() => { })
-import { setTimeout } from 'node:timers/promises'
 
 jest.spyOn(TransferProgress, 'setProgress')
 
@@ -61,6 +59,7 @@ beforeEach(() => {
 
 
 test("cancels multiplexer when aborted", async () => {
+  const controller = new AbortController()
   expect.assertions(1); // Ensure that one assertion is called
   let transferInterface = new PassThrough()
   Demultiplexer(transferInterface, (error) => {
@@ -71,9 +70,9 @@ test("cancels multiplexer when aborted", async () => {
   const totalSize = await GetFilesSize(sourcePath)
   TransferProgress.setTotalSize(totalSize)
   setImmediate(() => {
-    cancelOperation()
+    controller.abort()
   }, 200)
-  await expect(multiplexer(sourcePath, transferInterface)).rejects.toThrow()
+  await expect(multiplexer(sourcePath, transferInterface, controller)).rejects.toThrow()
 })
 
 
@@ -87,23 +86,23 @@ describe('cancels for empty directories', () => {
   })
 
   it("cancels multiplexer for empty directories", async () => {
+    const controller = new AbortController()
     let transferInterface = new PassThrough()
     Demultiplexer(transferInterface, (error) => {
       if (error) {
         console.error(error.message)
       }
-
     })
     let totalSize = await GetFilesSize(sourcePath)
     TransferProgress.setTotalSize(totalSize)
     setImmediate(() => {
-      cancelOperation()
+      controller.abort()
     }, 200)
     await expect(multiplexer(sourcePath, transferInterface)).rejects.toThrow()
   })
 })
 
-describe.only('demuxer', () => {
+describe('demuxer', () => {
   let sourcePath = "/tmp/pc"
   let destinationPath = "/tmp/userme/Downloads"
   beforeEach(() => {
@@ -112,13 +111,14 @@ describe.only('demuxer', () => {
     fs.ensureDirSync(sourcePath)
   })
   test("cleans up and rejects on abort", async () => {
+    const controller = new AbortController()
     let transferInterface = new PassThrough()
     const demuxerCallback = jest.fn()
     Demultiplexer(transferInterface, demuxerCallback)
     let totalSize = await GetFilesSize(sourcePath)
     TransferProgress.setTotalSize(totalSize)
     setImmediate(() => {
-      cancelOperation()
+      controller.abort()
     })
     try {
       await multiplexer(sourcePath, transferInterface)

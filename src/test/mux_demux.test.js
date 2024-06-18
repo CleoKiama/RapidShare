@@ -81,13 +81,14 @@ const getSize = async (rootPath) => {
 
 
 test("mux and demux work and update the progress", async () => {
+  const controller = new AbortController()
   let sourceSize = await getSize(sourcePath)
   let transferInterface = new PassThrough()
   const demuxerCallback = jest.fn()
   Demultiplexer(transferInterface, demuxerCallback)
   let totalSize = await GetFilesSize(sourcePath)
   TransferProgress.setTotalSize(totalSize)
-  await multiplexer(sourcePath, transferInterface)
+  await multiplexer(sourcePath, transferInterface, controller)
   transferInterface.end()
   let finalsize = await getSize(destinationPath)
   expect(finalsize).toBe(sourceSize)
@@ -97,6 +98,7 @@ test("mux and demux work and update the progress", async () => {
 
 
 describe("Updates the progress for empty directories or files", () => {
+  const controller = new AbortController()
   let emptyDirSource = `${os.tmpdir()}/emptyDirTest`
   beforeEach(() => {
     fs.removeSync(emptyDirSource)
@@ -111,7 +113,7 @@ describe("Updates the progress for empty directories or files", () => {
     Demultiplexer(transferInterface, demuxerCallback)
     let sizeRead = await GetFilesSize(emptyDirSource)
     TransferProgress.updateTotalSize(sizeRead)
-    await multiplexer(emptyDirSource, transferInterface)
+    await multiplexer(emptyDirSource, transferInterface, controller)
     transferInterface.end()
     let finalSize = await getSize(`${destinationPath}/emptyDirTest`)
     console.log(c.green(finalSize))

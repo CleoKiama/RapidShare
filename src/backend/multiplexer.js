@@ -4,8 +4,6 @@ import path from 'path'
 import { once } from 'node:events'
 import { Transform } from 'stream'
 import TransferProgress from './transferProgress.js'
-import { transferController as controller } from './abortController.js'
-import c from 'ansi-colors'
 import { pipeline } from 'stream/promises'
 
 export function createPacket(path, chunk, progress) {
@@ -20,7 +18,7 @@ export function createPacket(path, chunk, progress) {
 }
 
 
-export default async function multiplexer(rootPath, destination) {
+export default async function multiplexer(rootPath, destination, controller) {
   //for now a max concurrency of 3 files works but 4 has problems 
   const fileGenerator = new GenerateFiles(rootPath, 2)
   const iterator = fileGenerator[Symbol.asyncIterator]()
@@ -30,18 +28,18 @@ export default async function multiplexer(rootPath, destination) {
       await sendEmptyDirPacket(
         rootPath,
         iteratorResult.value.path,
-        destination
+        destination,
+        controller
       )
       iteratorResult = await iterator.next()
       continue
     }
-    await awaitSendPackets(rootPath, iteratorResult.value, destination)
+    await awaitSendPackets(rootPath, iteratorResult.value, destination, controller)
     iteratorResult = await iterator.next()
   }
-  console.log(c.greenBright("all batches sent finishing the mux now"))
 }
 
-const sendEmptyDirPacket = async (rootPath, emptyDirPath, destination) => {
+const sendEmptyDirPacket = async (rootPath, emptyDirPath, destination, controller) => {
   return await new Promise((resolve, reject) => {
     if (controller.signal.aborted) {
       let error = new Error("The operation was aborted")
@@ -73,7 +71,7 @@ const sendEmptyDirPacket = async (rootPath, emptyDirPath, destination) => {
   })
 }
 
-async function awaitSendPackets(rootPath, files, destination) {
+async function awaitSendPackets(rootPath, files, destination, controller) {
   let sources = createStreamSources(files)
   // let pendingWritingOperations = []
   // ** files will always be four files unless changed
@@ -85,17 +83,14 @@ async function awaitSendPackets(rootPath, files, destination) {
     const basename = path.basename(rootPath)
     const relativePath = `/${basename}${currentPath.substring(rootPath.length)}`
     // let sendFilePromise = sendFile(relativePath, currentSource, destination)
-    console.log(c.blue("sending a file"))
-    await sendFile(relativePath, currentSource, destination)
-    console.log(c.blue("sending a done moving to the next"))
+    await sendFile(relativePath, currentSource, destination, controller)
     // pendingWritingOperations.push(sendFilePromise)
   }
-  console.log("batch of files sent resolving now")
   // await Promise.all(pendingWritingOperations)
 }
 
 
-const sendFile = async (relativePath, sourceFile, destination) => {
+const sendFile = async (relativePath, sourceFile, destination, controller) => {
   let progress;
   const transformToPacket = new Transform({
     transform(chunk, _, callback) {
@@ -105,7 +100,6 @@ const sendFile = async (relativePath, sourceFile, destination) => {
       callback();
     },
     flush(cb) {
-      console.log("sending the all done message");
       const endOfFileMessage = 'all done';
       let finalPacket = createPacket(relativePath, Buffer.from(endOfFileMessage), 100);
       cb(null, finalPacket)

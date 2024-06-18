@@ -52,6 +52,7 @@ beforeEach(() => {
 })
 
 test('multiplexes multiple streams', async () => {
+  const controller = new AbortController()
   const rootPath = '/app/root'
   memfs.vol.fromJSON(json, rootPath)
   const pathToFiles = '/app/root'
@@ -95,7 +96,7 @@ test('multiplexes multiple streams', async () => {
   })
   try {
     TransferProgress.setTotalSize(400)
-    await multiplexer(pathToFiles, destination)
+    await multiplexer(pathToFiles, destination, controller)
   } catch (error) {
     console.error(error)
   }
@@ -107,6 +108,7 @@ test('multiplexes multiple streams', async () => {
 })
 
 test('it handles empty directories', async () => {
+  const controller = new AbortController()
   memfs.vol.mkdirSync('/app')
   memfs.vol.mkdirSync('/app/root/')
   memfs.vol.mkdirSync('/app/root/emptyDirOne')
@@ -154,7 +156,7 @@ test('it handles empty directories', async () => {
       console.error(`error in the destination stream ${error.message}`)
     })
   try {
-    await multiplexer(rootPath, destination).catch((error) => {
+    await multiplexer(rootPath, destination, controller).catch((error) => {
       throw new Error(error.message)
     })
   } catch (error) {

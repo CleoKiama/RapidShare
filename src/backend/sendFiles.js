@@ -8,13 +8,12 @@ import c from 'ansi-colors'
 import { once } from 'events'
 import GetFilesSize from './readFilesSize.js'
 import TransferProgress from './transferProgress.js'
-import { transferController } from './abortController.js'
 import { pipeline } from 'stream/promises'
 import { Transform } from 'stream'
 
 
-export async function returnFileStream(rootPath, destination) {
-  const { signal } = transferController
+export async function returnFileStream(rootPath, destination, controller) {
+  const { signal } = controller
   const relativePath = `/${path.basename(rootPath)}`
   const prepare_for_send = new Transform({
     transform(chunk, _, cb) {
@@ -50,11 +49,8 @@ export async function establishConnection(clientPort, clientAddress) {
 
 }
 
-export const cancel = () => {
-  transferController.abort()
-}
 
-export default async function transferFiles(rootPath, port, peerAdr) {
+export default async function transferFiles(rootPath, port, peerAdr, controller) {
   try {
     console.log('establishConnection....')
     var peerSocket = await establishConnection(
@@ -65,8 +61,8 @@ export default async function transferFiles(rootPath, port, peerAdr) {
     TransferProgress.setTotalSize(totalSize)
     const { isDir } = await identifyPath(rootPath)
     isDir
-      ? await multiplexer(rootPath, peerSocket)
-      : await returnFileStream(rootPath, peerSocket)
+      ? await multiplexer(rootPath, peerSocket, controller)
+      : await returnFileStream(rootPath, peerSocket, controller)
   } catch (error) {
     console.error(
       `something went wrong sending the file error : ${error.message}`
