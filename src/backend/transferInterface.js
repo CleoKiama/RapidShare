@@ -36,15 +36,17 @@ class TransferServer {
   }
   async connectionListener(socket) {
     // this.server.removeListener('connection', this.connectionListener)
-    console.log('send connection arrived ...')
     startWrite(socket)
   }
   addConnectionListener() {
     this.server.once('connection', this.connectionListener.bind(this))
   }
+  removeConnectionListener() {
+    this.server.removeListener('connection', this.connectionListener().bind(this))
+  }
   publishServer() {
     this.servicePublished = bonjour({
-      loopback: false,
+      //loopback: false,
     }).publish(
       {
         name: `${os.userInfo().username}_server`,

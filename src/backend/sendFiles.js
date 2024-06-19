@@ -60,6 +60,6 @@ export default async function transferFiles(rootPath, port, peerAdr, controller)
   }
   console.log(c.cyan('all send operations done ending transferFiles now'))
   peerSocket.end(() => console.log('peer socket closed successfully'))
-  //** add back the connection Listener when done */
+
 }
 

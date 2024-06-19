@@ -3,10 +3,10 @@ import updateUi from "./updateUi.js";
 import BonjourDeviceDiscovery from "./bonjourDeviceDiscovery.js";
 import { ipcMain } from "electron";
 import TransferProgress from "./transferProgress.js";
+import TransferServer from './transferInterface.js'
 
 export default async function startSend(filePaths, addressToMatch) {
   const controller = new AbortController()
-  // test phase 
   const { address, port } = BonjourDeviceDiscovery
     .getfoundDevices().devices.find((device) => device.address === addressToMatch)
   const handleCancel = () => {
@@ -15,6 +15,8 @@ export default async function startSend(filePaths, addressToMatch) {
   ipcMain.handleOnce("cancelTransfer", handleCancel)
   try {
     updateUi.onTransferStart()
+    //prevent other connections while sending files
+    TransferServer.removeConnectionListener()
     await transferFiles(filePaths, port, address, controller)
     updateUi.onTransferEnd()
     TransferProgress.cleanUp()
@@ -23,6 +25,7 @@ export default async function startSend(filePaths, addressToMatch) {
     //TODO error handling module
   } finally {
     ipcMain.removeHandler("cancelTransfer", handleCancel)
+    TransferServer.addConnectionListener()
   }
 }
 
