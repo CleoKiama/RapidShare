@@ -1,6 +1,8 @@
 import c from 'ansi-colors'
 import formatBytes from './formatBytes.js'
 import DestinationResolver from './destinationResolver.js'
+import TransferProgress from './transferProgress.js'
+import updateUi from './updateUi.js'
 
 
 export default function Demultiplexer(source, callback) {
@@ -44,9 +46,8 @@ export default function Demultiplexer(source, callback) {
       } else chunk.copy(contentBuffer, 0, 2 + pathLength, chunk.length)
     if (contentBuffer) {
       totalSizeReceived += contentBuffer.length
-      let formattedSize = formatBytes(totalSizeReceived)
-      console.log(c.green(`progress :${progress} total : ${formattedSize}`))
-    } else console.log(c.red("content buffer is null"))
+      updateUi.updateProgress(progress, totalSizeReceived)
+    }
     pendingWriteOperations += 1
     writeToDisk.saveToFileSystem(currentPath, contentBuffer, (error) => {
       if (error) return callback(error)
@@ -56,7 +57,6 @@ export default function Demultiplexer(source, callback) {
         callback(null)
       } else {
         if (pendingWriteOperations === 0) {
-          console.log(c.yellow("No pendingWriteOperations but the socket end event not fired yet"))
           process.nextTick(handleReadable)
         }
 
@@ -70,7 +70,6 @@ export default function Demultiplexer(source, callback) {
   source.once('error', (err) => {
     //TODO might need to do better cleanup here instead of just resolving
     writeToDisk.cleanUp()
-    console.error(('something went wrong demuxing ' + err.message))
     callback(err)
   })
 

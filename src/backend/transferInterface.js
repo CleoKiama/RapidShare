@@ -1,4 +1,3 @@
-import c from 'ansi-colors'
 import thisMachineAddress from './currentAssignedAddress.js'
 import { createServer } from 'net'
 import startWrite from '../backend/startWrite.js'
@@ -23,14 +22,7 @@ class TransferServer {
         host: address,
         port: defaultClientListeningPort,
       },
-      () => {
-        this.addConnectionListener()
-        console.log(
-          c.green(
-            `tcp server ready on ${this.server.address().address} and ${defaultClientListeningPort}`
-          )
-        )
-      }
+      () => { this.addConnectionListener() }
     )
 
   }
@@ -42,11 +34,11 @@ class TransferServer {
     this.server.once('connection', this.connectionListener.bind(this))
   }
   removeConnectionListener() {
-    this.server.removeListener('connection', this.connectionListener().bind(this))
+    this.server.removeListener('connection', this.connectionListener.bind(this))
   }
   publishServer() {
     this.servicePublished = bonjour({
-      //loopback: false,
+      loopback: false,
     }).publish(
       {
         name: `${os.userInfo().username}_server`,

@@ -12,12 +12,12 @@ export default async function startSend(filePaths, addressToMatch) {
   const handleCancel = () => {
     controller.abort()
   }
-  ipcMain.handleOnce("cancelTransfer", handleCancel)
+  ipcMain.handle("cancelTransfer", handleCancel)
   try {
     updateUi.onTransferStart()
     //prevent other connections while sending files
     TransferServer.removeConnectionListener()
-    await transferFiles(filePaths, port, address, controller)
+    await transferFiles(filePaths, 4000, '127.0.0.1', controller)
     updateUi.onTransferEnd()
     TransferProgress.cleanUp()
   } catch (error) {

@@ -33,7 +33,7 @@ export default function TransferProgress({ onNavigateBack }) {
   }, [])
   useEffect(() => {
     if (isCanceled || error) {
-      // once it is cancel start listening incase a new transfer starts and reset the ui to update
+      //once it is cancel start listening incase a new transfer starts and reset the ui to update
       const listener = (_, status) => {
         console.log(status)
         setIsCanceled(false)

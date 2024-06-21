@@ -29,7 +29,7 @@ export default function App() {
   }
   return (
     <ErrorBoundary fallbackRender={Fallback}>
-      <main className="mx-auto mt-4 h-full  min-w-[474px]  rounded-2xl bg-grey-200 px-6 py-4">
+      <main className="mx-auto h-screen  min-w-[474px]  rounded-2xl bg-grey-200 px-6 py-4">
         <h1 className='pl-4 font-semibold text-xl pb-1'>RapidShare</h1>
         <Container>
           <Nav

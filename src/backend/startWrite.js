@@ -1,19 +1,18 @@
 import Demultiplexer from "./demultiplexer.js";
-import c from 'ansi-colors'
-import updateUi from "./updateUi.js";
 import TransferServer from './transferInterface.js'
 import transferProgress from "./transferProgress.js";
 import { ipcMain } from "electron";
+import updateUi from "./updateUi.js";
 
 export default async function startWrite(socket) {
   // Todo errror handling logic here 
-  ipcMain.handleOnce('cancelTransfer', () => {
+  const handleCancel = () => {
     socket.destroy({
       code: "ABORT_ERR"
     })
-  })
+  }
+  ipcMain.handle('cancelTransfer', handleCancel)
   updateUi.onTransferStart()
-  console.log(c.green("waiting for demux to finish...."))
   Demultiplexer(socket, (error) => {
     if (error) {
       updateUi.onError(error)
@@ -22,5 +21,6 @@ export default async function startWrite(socket) {
     }
     transferProgress.cleanUp()
     TransferServer.addConnectionListener()
+    ipcMain.removeHandler("cancelTransfer", handleCancel)
   })
 }

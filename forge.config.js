@@ -29,11 +29,14 @@ module.exports = {
       name: '@electron-forge/plugin-auto-unpack-natives',
       config: {},
     },
-       
+
     {
       name: '@electron-forge/plugin-webpack',
       config: {
         "devContentSecurityPolicy": "default-src 'self' 'unsafe-eval' 'unsafe-inline' static: http: https: ws:",
+        devServer: {
+          port: 8080 // replace with your desired port number
+        },
         mainConfig: './webpack.main.config.js',
         renderer: {
           config: './webpack.renderer.config.js',

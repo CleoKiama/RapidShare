@@ -15,6 +15,7 @@ var getEthAddress = () => {
 //of poll till a wifi connection is established
 export default function thisMachineAddress() {
   //!consider cases for the ethernet cable
+
   return getWifiAddress()
   // return getEthAddress()
 }
