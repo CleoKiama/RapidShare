@@ -1,19 +1,17 @@
-import thisMachineAddress from './currentAssignedAddress.js'
 import { createServer } from 'net'
 import startWrite from '../backend/startWrite.js'
 import bonjour from 'bonjour'
 import os from 'os'
+import { MonitorNetwork } from './currentAssignedAddress.js'
 
-export const address = thisMachineAddress()
 export var defaultClientListeningPort = 4000
 
 class TransferServer {
   constructor() {
     this.server
-    this.publishServer()
     this.servicePublished
   }
-  startServer() {
+  startServer(address) {
     this.server = createServer({
       keepAlive: true,
     })
@@ -22,7 +20,9 @@ class TransferServer {
         host: address,
         port: defaultClientListeningPort,
       },
-      () => { this.addConnectionListener() }
+      () => {
+        this.addConnectionListener()
+      }
     )
 
   }
@@ -36,7 +36,7 @@ class TransferServer {
   removeConnectionListener() {
     this.server.removeListener('connection', this.connectionListener.bind(this))
   }
-  publishServer() {
+  publishServer(address) {
     this.servicePublished = bonjour({
       loopback: false,
     }).publish(
@@ -55,7 +55,12 @@ class TransferServer {
   unpublish() {
     this.servicePublished.stop()
   }
-
+  initiate() {
+    MonitorNetwork((address) => {
+      this.startServer(address)
+      this.publishServer(address)
+    })
+  }
 }
 
 

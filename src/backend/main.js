@@ -5,5 +5,5 @@ import TransferServer from "./transferInterface.js"
 export default function Main() {
   bonjourDeviceDiscovery.start()
   new HandleFileDialogLogic()
-  TransferServer.startServer()
+  TransferServer.initiate()
 }

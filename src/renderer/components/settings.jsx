@@ -4,13 +4,22 @@ import React, { useEffect, useState } from 'react'
 export default function Settings() {
   const [saveDirectory, setSaveDirectory] = useState('')
   useEffect(() => {
+    const listener = (_, status) => {
+      setTransferStart(status)
+    }
     if (!saveDirectory) {
       window.electron.invoke('getSaveDirectory')
         .then(dir => {
           setSaveDirectory(dir)
         })
     }
-  })
+
+    window.electron.on("transferring", listener)
+    return () => {
+      window.electron.removeListener('transferring', listener)
+    }
+
+  }, [])
   const onChangeSaveDirectory = () => {
     window.electron.invoke('dialog:handleSaveDirectory').then((choosenPath) => {
       if (choosenPath === "canceled") return

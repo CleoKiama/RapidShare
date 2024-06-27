@@ -7,17 +7,24 @@ var getWifiAddress = () => {
 
 }
 
-var getEthAddress = () => {
-  return networkInterfaces()/*['eth0'] [0].address */
+const networkInterface = platform() === 'win32' ? 'Wi-Fi' : 'wlo1';
+
+
+export function MonitorNetwork(callback) {
+  const monitorInterval = setInterval(() => {
+    if (networkInterfaces()[networkInterface] === undefined)
+      console.log("waiting for connection to network")
+    else {
+      clearInterval(monitorInterval)
+      let addr = networkInterfaces()[networkInterface][0].address
+      callback(addr)
+    }
+  }, 4000)
 }
 
-//throws an error when not connected to wifi or etharnet handle such cases
-//of poll till a wifi connection is established
-export default function thisMachineAddress() {
-  //!consider cases for the ethernet cable
 
+export default function thisMachineAddress() {
   return getWifiAddress()
-  // return getEthAddress()
 }
 
 
