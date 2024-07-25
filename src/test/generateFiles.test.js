@@ -1,5 +1,4 @@
 import * as memfs from "memfs";
-import c from 'ansi-colors'
 import GenerateFiles from "../backend/generateFiles.js";
 
 jest.mock("fs-extra", () => memfs.promises);
@@ -42,9 +41,6 @@ test("it generates four file paths at time", async () => {
   );
   const generate = new GenerateFiles(path, 4);
   for await (const files of generate) {
-    if (files.length === 0) {
-      console.log(c.red(`in this instance the files array is empty`))
-    }
     foundFiles.push(...files);
     expect(files.length).toBeLessThan(5)
   }

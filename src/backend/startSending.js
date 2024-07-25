@@ -8,7 +8,7 @@ import TransferServer from './transferInterface.js'
 export default async function startSend(filePaths, addressToMatch) {
   const controller = new AbortController()
   const { address, port } = BonjourDeviceDiscovery
-    .getfoundDevices().devices.find((device) => device.address === addressToMatch)
+    .getFoundDevices().devices.find((device) => device.address === addressToMatch)
   const handleCancel = () => {
     controller.abort()
   }
@@ -17,7 +17,7 @@ export default async function startSend(filePaths, addressToMatch) {
     updateUi.onTransferStart()
     //prevent other connections while sending files
     TransferServer.removeConnectionListener()
-    await transferFiles(filePaths, 4000, '127.0.0.1', controller)
+    await transferFiles(filePaths, port, address, controller)
     updateUi.onTransferEnd()
     TransferProgress.cleanUp()
   } catch (error) {

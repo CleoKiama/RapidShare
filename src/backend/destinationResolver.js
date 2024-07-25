@@ -16,6 +16,7 @@ export default class DestinationResolver {
       fileStream.write(dataBuffer, callback)
     } else {
       this.createFileIfNotExists(destinationPath)
+      // The async counterpart here is buggy so I am using the sync version
       //await fs.ensureFile(destinationPath)
       fileStream = fs.createWriteStream(destinationPath)
       this.pendingFiles.set(destinationPath, fileStream)

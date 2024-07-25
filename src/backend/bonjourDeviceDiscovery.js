@@ -1,4 +1,3 @@
-import c from 'ansi-colors'
 import bonjour from "bonjour";
 import updateUi from "./updateUi.js";
 import { ipcMain } from 'electron';
@@ -15,31 +14,24 @@ class BonjourDeviceDiscovery {
         ...service.txt,
         port: service.port,
       }
-      console.log(c.green("we have a device online"))
       this.verifyDevices(deviceInfo)
     })
     this.monitorDevices()
     this.returnToUi()
   }
-  getfoundDevices() {
+  getFoundDevices() {
     return this.foundDevices
   }
   start() {
-    try {
-      this.browser.start()
-    } catch (error) {
-      console.error('something went wrong starting the bonjour find service')
-    }
+    this.browser.start()
   }
   stop() {
     this.browser.stop()
   }
   verifyDevices(deviceInfo) {
-    if (platform() === 'win32' && deviceInfo.address === thisMachineAddress()) {
-      return console.log("matches thus returning")
-    }
+    // I have set loopback to false in the bonjour publish method but on windows it still its own address thus this check below
+    if (platform() === 'win32' && deviceInfo.address === thisMachineAddress()) return
     if (this.addDevice(deviceInfo)) {
-      console.log(deviceInfo)
       updateUi.updateDevices(this.foundDevices)
     }
   }
@@ -57,16 +49,13 @@ class BonjourDeviceDiscovery {
   removeDevice(offlineDevice) {
     let onlineDevices = this.foundDevices.devices.filter((device) => offlineDevice.address !== device.address)
     this.foundDevices.devices = onlineDevices
-    console.log(this.foundDevices)
     updateUi.updateDevices(this.foundDevices)
   }
   monitorDevices() {
     this.browser.on('down', (service) => {
-      console.log(c.red(`we have a service that is down`))
       if (platform() === 'win32' && service.txt.address === thisMachineAddress()) {
         return
       }
-      console.log(service.txt)
       this.removeDevice(service.txt)
     })
   }

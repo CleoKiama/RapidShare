@@ -12,9 +12,7 @@ const networkInterface = platform() === 'win32' ? 'Wi-Fi' : 'wlo1';
 
 export function MonitorNetwork(callback) {
   const monitorInterval = setInterval(() => {
-    if (networkInterfaces()[networkInterface] === undefined)
-      console.log("waiting for connection to network")
-    else {
+    if (networkInterfaces()[networkInterface]) {
       clearInterval(monitorInterval)
       let addr = networkInterfaces()[networkInterface][0].address
       callback(addr)
