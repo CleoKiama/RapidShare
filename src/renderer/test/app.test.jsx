@@ -1,9 +1,8 @@
 import React from 'react'
-import { render } from "@testing-library/react"
+import { render, act } from "@testing-library/react"
 import { EventEmitter } from "node:events"
 import App from "../app.jsx"
 import os from 'os'
-import { act } from "@testing-library/react"
 
 
 test("renders the TransferFileProgress component on startTransfer", async () => {

@@ -23,8 +23,7 @@ class TransferProgress {
     }
     if (Number.isNaN(percentageProgress)) {
       console.error(c.red(`something went wrong with the computation of progress value received : NAN for bytes ${bytes}`))
-      updateUi.updateProgress(100, bytes);
-      return 100;
+      return
     }
     updateUi.updateProgress(percentageProgress, this.currentlyTransferred);
     return percentageProgress;
