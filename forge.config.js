@@ -12,6 +12,20 @@ module.exports = {
       config: {},
     },
     {
+      name: '@electron-forge/maker-squirrel',
+      config: {
+      }
+    },
+    {
+      name: '@electron-forge/maker-flatpak',
+      config: {
+        options: {
+          categories: ['Network', 'FileTransfer'],
+          mimeType: ['video/h264']
+        }
+      }
+    },
+    {
       name: '@electron-forge/maker-zip',
       platforms: ['darwin'],
     },
