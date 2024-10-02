@@ -33,7 +33,6 @@ test('handles the file send button click', async () => {
     invoke: async (handler, address, type) => {
       if (handler === 'dialog:openFile')
         return await openFileDialog(address, type)
-      else return console.error('no handler assigned')
     },
   }
   const device = new EventEmitter()

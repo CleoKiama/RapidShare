@@ -32,10 +32,13 @@ export default function App() {
       <main className="mx-auto h-screen  min-w-[474px]  rounded-2xl bg-grey-200 px-6 py-4">
         <h1 className='pl-4 font-semibold text-xl pb-1'>RapidShare</h1>
         <Container>
-          <Nav
-            navState={navState}
-            onNavUpdate={updateNav}
-          />
+          {
+            !transferStart && <Nav
+              navState={navState}
+              onNavUpdate={updateNav}
+            />
+
+          }
           {
             navState === "devices" ?
               <div className='pl-4'>
@@ -53,7 +56,7 @@ export default function App() {
                 }
               </div>
               :
-              <Settings />
+              !transferStart && <Settings />
           }
         </Container>
       </main>

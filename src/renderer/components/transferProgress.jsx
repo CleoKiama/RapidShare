@@ -35,7 +35,7 @@ export default function TransferProgress({ onNavigateBack }) {
     if (isCanceled || error) {
       //once it is cancel start listening incase a new transfer starts and reset the ui to update
       const listener = (_, status) => {
-        console.log(status)
+
         setIsCanceled(false)
         setError(false)
         setProgress({ percentageProgress: 0, bytesTransferred: 0 })

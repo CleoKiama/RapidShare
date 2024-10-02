@@ -20,8 +20,8 @@ export function addDevice(deviceInfo) {
 // updates the ui with devices found
 export default function onDeviceFound(webContents) {
   deviceDiscovery.on('deviceFound', (foundDevices) => {
-    console.log(c.green("device discovered"))
-    console.log(foundDevices)
+      )
+      
     webContents.send('deviceFound', foundDevices)
   })
 }

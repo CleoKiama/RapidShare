@@ -1,25 +1,20 @@
-import c from 'ansi-colors'
-import formatBytes from './formatBytes.js'
 import DestinationResolver from './destinationResolver.js'
-import TransferProgress from './transferProgress.js'
 import updateUi from './updateUi.js'
 
 
 export default function Demultiplexer(source, callback) {
-  let writeToDisk = new DestinationResolver()
+  const writeToDisk = new DestinationResolver()
   let pendingWriteOperations = 0
   let currentLength = null
   let currentPath = null
   let totalSizeReceived = 0
   let readableEnded = false
   source.on('end', () => {
-    console.log(c.green("socket ended checking for pending write operations"))
     readableEnded = true
     if (pendingWriteOperations === 0) {
       writeToDisk.cleanUp()
       callback(null)
-    } else
-      console.log(c.magentaBright('The socket end event fired waiting for pending write operations'))
+    }
   })
 
   const handleReadable = () => {
@@ -36,8 +31,8 @@ export default function Demultiplexer(source, callback) {
     if (chunk === null) {
       return null
     }
-    let progress = chunk.readUInt8(0)
-    let pathLength = chunk.readUInt8(1)
+    const progress = chunk.readUInt8(0)
+    const pathLength = chunk.readUInt8(1)
     currentPath = chunk.toString('utf8', 2, 2 + pathLength)
     let contentBuffer = Buffer.alloc(chunk.length - pathLength - 2)
     if ('length' in contentBuffer)

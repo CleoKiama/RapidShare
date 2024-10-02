@@ -1,9 +1,10 @@
-import * as memfs from "memfs";
+import path from "node:path"
 import GenerateFiles from "../backend/generateFiles.js";
+import fs from "fs-extra"
 
-jest.mock("fs-extra", () => memfs.promises);
+const rootDir = "/tmp/fileGenerator_test";
 
-const json = {
+const filesData = {
   "./dirOne/Readme.txt": "hello there",
   "./dirOne/fileOne.md": "this is fileOne.md",
   "./fileTwo.md": "this is file two content.md .yeah",
@@ -24,66 +25,55 @@ const json = {
   "./dirOne/dirTwo/dirThree/dirFour/fileSeventeen.txt": "Seventeenth file content",
   "./dirOne/dirTwo/dirThree/dirFour/fileEighteen.md": "Eighteenth file content",
   "./dirOne/dirTwo/dirThree/dirFour/fileNineteen.txt": "Nineteenth file content",
-  "./dirOne/dirTwo/dirThree/dirFour/fileTwenty.md": "Twentieth file content"
+  "./dirOne/dirTwo/dirThree/dirFour/fileTwenty.md": "Twentieth file content",
+  "./emptyDirOne/": "",
+  "./dirOne/emptyDirTwo/": "",
+  "./dirOne/dirTwo/emptyDirThree/": ""
 };
 
-beforeEach(() => {
-  memfs.vol.reset();
-});
-
-
-test("it generates four file paths at time", async () => {
-  memfs.vol.fromJSON(json, "/app");
-  const path = "/app";
-  let foundFiles = [];
-  const originalFiles = Object.keys(json).map(
-    (path) => `/app${path.substring(1)}`
-  );
-  const generate = new GenerateFiles(path, 4);
-  for await (const files of generate) {
-    foundFiles.push(...files);
-    expect(files.length).toBeLessThan(5)
-  }
-  expect(foundFiles).toEqual(expect.arrayContaining(originalFiles))
-  expect(foundFiles).toHaveLength(originalFiles.length);
-});
-
-
-
-test("handles empty directories and returns the path", async () => {
-  // ** caveat the root directory is considered empty if it has no files 
-  memfs.vol.mkdirSync("/app");
-  memfs.vol.mkdirSync("/app/emptyDirOne");
-  memfs.vol.mkdirSync("/app/emptyDirTwo");
-  memfs.vol.mkdirSync("/app/emptyDirThree");
-  const path = "/app";
-  let emptyDirs = Object.keys(memfs.vol.toJSON())
-  const foundEmptyDirs = []
-  const generate = new GenerateFiles(path, 4);
-  for await (const dirent of generate) {
-    foundEmptyDirs.push(dirent.path)
-    expect(dirent.empty).toBe(true)
-  }
-  foundEmptyDirs.shift()
-  expect(emptyDirs).toEqual(expect.arrayContaining(foundEmptyDirs))
-  expect(foundEmptyDirs).toHaveLength(emptyDirs.length)
-
-});
-test('handles one empty Directory', async () => {
-  memfs.vol.mkdirSync("/app");
-  const path = '/app';
-  let emptyDirs = Object.keys(memfs.vol.toJSON())
-  const foundEmptyDir = []
-  const generate = new GenerateFiles(path, 4);
-  let hasPropertyEmpty = false
-  for await (const dirent of generate) {
-    if (Object.hasOwn(dirent, 'empty')) {
-      hasPropertyEmpty = true
+beforeEach(async () => {
+  for (const [key, value] of Object.entries(filesData)) {
+    if (value === "") {
+      await fs.ensureDir(`${rootDir}/${key}`);
+    } else {
+      await fs.outputFile(`${rootDir}/${key}`, value);
     }
-    foundEmptyDir.push(dirent.path)
-    expect(dirent.empty).toBe(true)
   }
-  expect(hasPropertyEmpty).toBe(true)
-  expect(foundEmptyDir).toHaveLength(1)
-  expect(foundEmptyDir).toEqual(expect.arrayContaining(emptyDirs))
 })
+
+
+
+test("it walks through the file system and generates files", async () => {
+  const currentPath = "/tmp/fileGenerator_test";
+  const concurrency = 2
+  const expectedFiles = Object.keys(filesData)
+    .filter(value => filesData[value] !== "")
+    .map(value => path.resolve(rootDir, value));
+
+  const expectedEmptyDirs = [
+    `${rootDir}/emptyDirOne`,
+    `${rootDir}/dirOne/emptyDirTwo`,
+    `${rootDir}/dirOne/dirTwo/emptyDirThree`
+  ];
+  const walkDir = new GenerateFiles(currentPath, concurrency);
+  const files = [];
+  const emptyDirs = [];
+  const iterator = walkDir[Symbol.asyncIterator]();
+  let iteratorResult = await iterator.next()
+  expect(iteratorResult.value.length).toBe(concurrency);
+  while (!iteratorResult.done) {
+    if (Object.hasOwn(iteratorResult.value, 'empty')) {
+      emptyDirs.push(iteratorResult.value.path);
+    } else {
+      files.push(...iteratorResult.value);
+    }
+    iteratorResult = await iterator.next()
+  }
+
+  expect(files.length).toBe(21);
+  expect(emptyDirs.length).toBe(3);
+  expect(files).toEqual(expect.arrayContaining(expectedFiles));
+  expect(emptyDirs).toEqual(expect.arrayContaining(expectedEmptyDirs));
+})
+
+

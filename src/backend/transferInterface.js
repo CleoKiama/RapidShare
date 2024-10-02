@@ -4,6 +4,7 @@ import bonjour from 'bonjour'
 import os from 'os'
 import { MonitorNetwork } from './currentAssignedAddress.js'
 
+//TODO: Make this dynamic
 export var defaultClientListeningPort = 4000
 
 class TransferServer {
@@ -27,7 +28,6 @@ class TransferServer {
 
   }
   async connectionListener(socket) {
-    // this.server.removeListener('connection', this.connectionListener)
     startWrite(socket)
   }
   addConnectionListener() {

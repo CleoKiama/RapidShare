@@ -10,8 +10,8 @@ function DiscoveredDevices() {
 
   useEffect(() => {
     function listen(_, data) {
-      console.log('we have a device update..')
-      console.log(data)
+       
+       
       setDeviceData(data)
     }
     window.electron.on('updateDevices', listen)
@@ -22,7 +22,7 @@ function DiscoveredDevices() {
   useEffect(() => {
     if (typeof deviceData === 'undefined')
       window.electron.invoke('currentDevices').then((foundDevices) => {
-        console.log(`found ${foundDevices}`)
+         
         setDeviceData(foundDevices)
       })
   }, [])

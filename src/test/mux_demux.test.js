@@ -1,31 +1,31 @@
 /**
  * @jest-environment node
  */
-import updateUi from '../backend/updateUi.js'
-import TransferProgress from '../backend/transferProgress.js'
-import Demultiplexer from '../backend/demultiplexer.js'
-import path from 'node:path'
-import formatBytes from '../backend/formatBytes.js'
 import fastFolderSize from 'fast-folder-size'
-import os from 'node:os'
 import fs from 'fs-extra'
-import { promisify } from 'node:util'
+import os from 'node:os'
+import path from 'node:path'
 import { PassThrough } from 'node:stream'
+import { setTimeout } from 'node:timers/promises'
+import { promisify } from 'node:util'
+import Demultiplexer from '../backend/demultiplexer.js'
+import formatBytes from '../backend/formatBytes.js'
 import multiplexer from '../backend/multiplexer.js'
 import GetFilesSize from '../backend/readFilesSize.js'
-import c from 'ansi-colors'
+import TransferProgress from '../backend/transferProgress.js'
+import updateUi from '../backend/updateUi.js'
 
-var updateUiSpy = jest.spyOn(updateUi, 'updateProgress').mockImplementation(() => { })
+const updateUiSpy = jest.spyOn(updateUi, 'updateProgress').mockImplementation(() => { })
 
-var setProgressSpy = jest.spyOn(TransferProgress, 'setProgress')
+const setProgressSpy = jest.spyOn(TransferProgress, 'setProgress')
 
-var sourcePath = `${os.tmpdir()}/Home`
-var destinationPath = `${os.tmpdir()}/me/Downloads`
+const sourcePath = `${os.tmpdir()}/Home`
+const destinationPath = `${os.tmpdir()}/me/Downloads`
 
 
 jest.mock("../backend/appConfig.js", () => {
   const os = require("node:os")
-  var destinationPath = `${os.tmpdir()}/me/Downloads`
+  const destinationPath = `${os.tmpdir()}/me/Downloads`
   return {
     __esModule: true,
     config: {
@@ -54,7 +54,7 @@ beforeEach(() => {
   fs.removeSync(sourcePath)
   fs.removeSync((destinationPath))
   fs.ensureDirSync(sourcePath)
-  let values = Object.values(json)
+  const values = Object.values(json)
   Object.keys(json).map((value, index) => {
     fs.ensureFileSync(`${sourcePath}/${value}`)
     fs.writeFileSync(`${sourcePath}/${value}`, values[index])
@@ -66,10 +66,10 @@ const getSize = async (rootPath) => {
   try {
     if (!path.extname(rootPath)) {
       const fastFolderSizeAsync = promisify(fastFolderSize)
-      let size = await fastFolderSizeAsync(rootPath)
+      const size = await fastFolderSizeAsync(rootPath)
       return formatBytes(size)
     }
-    let { size } = await fs.stat(rootPath)
+    const { size } = await fs.stat(rootPath)
     return formatBytes(size)
 
   } catch (error) {
@@ -80,42 +80,44 @@ const getSize = async (rootPath) => {
 
 
 // This currently fails but a manual test shows that the mux and demux works will fix this later
-test.only("mux and demux work and update the progress", async () => {
+test("mux and demux work and update the progress", async () => {
   const controller = new AbortController()
-  let sourceSize = await getSize(sourcePath)
-  let transferInterface = new PassThrough()
+  const sourceSize = await getSize(sourcePath)
+  const transferInterface = new PassThrough()
   const demuxerCallback = jest.fn()
   Demultiplexer(transferInterface, demuxerCallback)
-  let totalSize = await GetFilesSize(sourcePath)
+  const totalSize = await GetFilesSize(sourcePath)
   TransferProgress.setTotalSize(totalSize)
   await multiplexer(sourcePath, transferInterface, controller)
   transferInterface.end()
-  let finalsize = await getSize(destinationPath)
-  expect(finalsize).toBe(sourceSize)
-  expect(updateUiSpy).toHaveBeenCalledWith(expect.any(Number), expect.any(Number))
+  // await for the callback to be called 
+  await setTimeout(500)
   expect(demuxerCallback).toHaveBeenCalled()
+  const finalsize = await getSize(destinationPath)
+  expect(updateUiSpy).toHaveBeenCalledWith(expect.any(Number), expect.any(Number))
+  expect(finalsize).toBe(sourceSize)
 })
 
 
 describe("Updates the progress for empty directories or files", () => {
   const controller = new AbortController()
-  let emptyDirSource = `${os.tmpdir()}/emptyDirTest`
+  const emptyDirSource = `${os.tmpdir()}/emptyDirTest`
   beforeEach(() => {
     fs.removeSync(emptyDirSource)
     fs.ensureDirSync(emptyDirSource)
     fs.ensureDirSync((`${destinationPath}`))
   })
   it("updates the progress for empty dirs", async () => {
-    let initSize = await getSize(emptyDirSource)
+    const initSize = await getSize(emptyDirSource)
     expect(initSize).toBe('0 Bytes')
-    let transferInterface = new PassThrough()
+    const transferInterface = new PassThrough()
     const demuxerCallback = jest.fn()
     Demultiplexer(transferInterface, demuxerCallback)
-    let sizeRead = await GetFilesSize(emptyDirSource)
+    const sizeRead = await GetFilesSize(emptyDirSource)
     TransferProgress.updateTotalSize(sizeRead)
     await multiplexer(emptyDirSource, transferInterface, controller)
     transferInterface.end()
-    let finalSize = await getSize(`${destinationPath}/emptyDirTest`)
+    const finalSize = await getSize(`${destinationPath}/emptyDirTest`)
     expect(finalSize).toBe(initSize)
     expect(updateUiSpy).toHaveBeenCalledWith(expect.any(Number), expect.any(Number))
     expect(setProgressSpy).toHaveBeenCalledWith(0)

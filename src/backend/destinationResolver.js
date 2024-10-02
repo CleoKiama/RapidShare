@@ -20,6 +20,7 @@ export default class DestinationResolver {
       //await fs.ensureFile(destinationPath)
       fileStream = fs.createWriteStream(destinationPath)
       this.pendingFiles.set(destinationPath, fileStream)
+      //TODO: handle permission denied errors and propergate them back.
       fileStream.write(dataBuffer, callback)
     }
   }
