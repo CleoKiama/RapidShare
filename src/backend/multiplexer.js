@@ -1,10 +1,11 @@
 import createStreamSources from './createFileStreams.js'
-import GenerateFiles from './generateFiles.js'
+import FileGenerator from './generateFiles.js'
 import path from 'path'
 import { once } from 'node:events'
-import { Transform } from 'stream'
+import { Transform } from 'node:stream'
 import TransferProgress from './transferProgress.js'
-import { pipeline } from 'stream/promises'
+import { pipeline } from 'node:stream/promises'
+
 
 export function createPacket(path, chunk, progress) {
   const pathBuffer = Buffer.from(path)
@@ -20,7 +21,7 @@ export function createPacket(path, chunk, progress) {
 
 export default async function multiplexer(rootPath, destination, controller) {
   //for now a max concurrency of 3 files works but 4 has problems 
-  const fileGenerator = new GenerateFiles(rootPath, 2)
+  const fileGenerator = new FileGenerator(rootPath, 2)
   const iterator = fileGenerator[Symbol.asyncIterator]()
   let iteratorResult = await iterator.next()
   while (!iteratorResult.done) {
@@ -31,10 +32,8 @@ export default async function multiplexer(rootPath, destination, controller) {
         destination,
         controller
       )
-      iteratorResult = await iterator.next()
-      continue
-    }
-    await awaitSendPackets(rootPath, iteratorResult.value, destination, controller)
+    } else
+      await awaitSendPackets(rootPath, iteratorResult.value, destination, controller)
     iteratorResult = await iterator.next()
   }
 }
@@ -42,12 +41,12 @@ export default async function multiplexer(rootPath, destination, controller) {
 const sendEmptyDirPacket = async (rootPath, emptyDirPath, destination, controller) => {
   return await new Promise((resolve, reject) => {
     if (controller.signal.aborted) {
-      let error = new Error("The operation was aborted")
+      const error = new Error("The operation was aborted")
       error.code = "ABORT_ERR"
       return reject(error)
     }
-    let abortListener = () => {
-      let error = new Error("The operation was aborted")
+    const abortListener = () => {
+      const error = new Error("The operation was aborted")
       error.code = "ABORT_ERR"
       reject(error)
     }
@@ -61,24 +60,32 @@ const sendEmptyDirPacket = async (rootPath, emptyDirPath, destination, controlle
     // ** as in no files but may have other nested Empty Dirs
     if (emptyDirPath === rootPath) relativePath = basename
     else relativePath = `${basename}${emptyDirPath.substring(rootPath.length)}`
-    //TODO This will be a bug later fix it
-    let progress = TransferProgress.setProgress(0)
-    let drain = destination.write(createPacket(relativePath, null, progress), (err) => {
+    //TODO: This will be a bug later fix it
+    const progress = TransferProgress.setProgress(0)
+    const drain = destination.write(createPacket(relativePath, null, progress), (err) => {
       if (err) return Promise.reject(err)
     })
-    if (!drain) once(destination, 'drain').then(resolve).catch(reject)
-    else resolve()
+    if (!drain) once(destination, 'drain').then(() => {
+      controller.signal.removeEventListener('abort', abortListener);
+      resolve()
+    }).catch(error => {
+      controller.signal.removeEventListener('abort', abortListener);
+      reject(error)
+    })
+    else {
+      controller.signal.removeEventListener('abort', abortListener);
+      resolve()
+    }
   })
 }
 
 async function awaitSendPackets(rootPath, files, destination, controller) {
-  let sources = createStreamSources(files)
+  const sources = createStreamSources(files)
   // let pendingWritingOperations = []
   // ** files will always be four files unless changed
   while (files.length > 0) {
     const currentSource = sources.shift()
     const currentPath = files.shift()
-    //TODO want to change this to forEach 
     if (!currentPath) return
     const basename = path.basename(rootPath)
     const relativePath = `/${basename}${currentPath.substring(rootPath.length)}`
@@ -95,13 +102,13 @@ const sendFile = async (relativePath, sourceFile, destination, controller) => {
   const transformToPacket = new Transform({
     transform(chunk, _, callback) {
       progress = TransferProgress.setProgress(chunk.length);
-      let packet = createPacket(relativePath, chunk, progress);
+      const packet = createPacket(relativePath, chunk, progress);
       this.push(packet)
       callback();
     },
     flush(cb) {
       const endOfFileMessage = 'all done';
-      let finalPacket = createPacket(relativePath, Buffer.from(endOfFileMessage), 100);
+      const finalPacket = createPacket(relativePath, Buffer.from(endOfFileMessage), 100);
       cb(null, finalPacket)
     }
   });

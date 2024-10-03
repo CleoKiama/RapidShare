@@ -1,6 +1,6 @@
 import { once } from 'node:events'
 import { createConnection } from 'node:net'
-import { createReadStream } from 'node:node:fs'
+import { createReadStream } from 'node:fs'
 import path from 'node:path'
 import { Transform } from 'node:stream'
 import { pipeline } from 'node:stream/promises'
