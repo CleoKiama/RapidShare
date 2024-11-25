@@ -1,6 +1,5 @@
 import path from "node:path"
 import fs from "fs-extra";
-import c from "ansi-colors"
 
 export default class FileGenerator {
   constructor(basePath, concurrency) {
@@ -58,7 +57,6 @@ export default class FileGenerator {
           // Return empty directories if available
           if (this.emptyDirs.length > 0) {
             const nextEmptyDir = this.emptyDirs.shift();
-            console.log(c.blue(this.emptyDirs))
             return {
               done: false,
               value: {

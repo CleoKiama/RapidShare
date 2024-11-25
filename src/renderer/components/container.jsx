@@ -1,16 +1,14 @@
-import React from 'react'
-import PropTypes from 'prop-types'
+import React from "react";
+import PropTypes from "prop-types";
 
-function Container({ children }) {
-  return (
-    <div className="mx-auto h-[90vh]  min-h-80 min-w-[413px]  rounded-2xl bg-grey-50 pt-4">
-      {children}
-    </div>
-  )
+export default function Container({ children }) {
+	return (
+		<div className="w-full max-w-4xl mx-auto bg-white rounded-xl shadow-sm p-6">
+			{children}
+		</div>
+	);
 }
 
 Container.propTypes = {
-  children: PropTypes.node,
-}
-
-export default Container
+	children: PropTypes.node.isRequired,
+};

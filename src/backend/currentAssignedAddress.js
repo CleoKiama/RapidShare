@@ -18,6 +18,7 @@ const getWifiAddress = () => {
     if (address) break;
   }
 
+  console.log("returning from wifi", address)
   return address;
 };
 
@@ -36,6 +37,7 @@ export const getEthernetAddress = () => {
     }
     if (address) break;
   }
+  console.log("returning from ethernet", address)
   return address
 };
 
