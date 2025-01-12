@@ -2,11 +2,12 @@ import formatBytes from "./formatBytes.js";
 import mainWindowSetup from "./mainWindowSetup.js";
 
 class UpdateUi {
-	onTransferStart(username) {
+	onTransferStart(username, status) {
 		const { webContents } = mainWindowSetup.browserWindowRef();
 		webContents.send("transferring", {
 			started: true,
-			sendingTo: username,
+			deviceName: username,
+			status: status,
 		});
 	}
 	onTransferEnd(username) {
@@ -22,25 +23,16 @@ class UpdateUi {
 	}
 	updateDevices(foundDevices) {
 		const browserWindow = mainWindowSetup.browserWindowRef();
-		const MAX_RETRY_TIME = 2000;
-		const RETRY_INTERVAL = 200;
 
 		if (browserWindow?.webContents) {
-			browserWindow.webContents.send("updateDevices", foundDevices);
-			return;
-		}
-
-		let retryInterval;
-		const cleanup = () => clearInterval(retryInterval);
-
-		retryInterval = setInterval(() => {
-			if (browserWindow?.webContents) {
+			if (browserWindow.webContents.isLoading()) {
+				browserWindow.webContents.once("did-finish-load", () => {
+					browserWindow.webContents.send("updateDevices", foundDevices);
+				});
+			} else {
 				browserWindow.webContents.send("updateDevices", foundDevices);
-				cleanup();
 			}
-		}, RETRY_INTERVAL);
-
-		setTimeout(cleanup, MAX_RETRY_TIME);
+		}
 	}
 	updateProgress(percentageProgress, bytesTransferred) {
 		const { webContents } = mainWindowSetup.browserWindowRef();

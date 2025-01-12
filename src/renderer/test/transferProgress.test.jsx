@@ -3,10 +3,10 @@ import { render } from "@testing-library/react";
 import { EventEmitter } from "node:events";
 import TransferProgress from "../components/transferProgress.jsx";
 import { act } from "@testing-library/react";
-import os from "os";
+import os from "node:os";
 import App from "../app.jsx";
 
-const sendingTo = "pcTwo";
+const deviceName = "pcTwo";
 
 test("transfer Progress updates the ui on transfer start", async () => {
 	const fileProgress = new EventEmitter();
@@ -20,7 +20,14 @@ test("transfer Progress updates the ui on transfer start", async () => {
 		},
 	};
 	const { findByText } = render(
-		<TransferProgress onNavigateBack={onNavigateBack} sendingTo={sendingTo} />,
+		<TransferProgress
+			onNavigateBack={onNavigateBack}
+			transferStatus={{
+				started: true,
+				status: "sending",
+				deviceName,
+			}}
+		/>,
 	);
 	await act(async () => {
 		fileProgress.emit(
@@ -68,7 +75,8 @@ test("reverts back the ui once the transfer is canceled from the other device", 
 			},
 			{
 				started: true,
-				sendingTo,
+				deviceName,
+				status: "sending",
 			},
 		);
 	});
@@ -113,7 +121,7 @@ test("is able to restart the file transfer after a cancel and update the ui acco
 		},
 	};
 	const { findByAltText, findByText } = render(<App />);
-	const transferringPayload = { started: true, sendingTo };
+	const transferringPayload = { started: true, deviceName, status: "sending" };
 	await act(async () => {
 		ipcMain_mock.emit(
 			"transferring",

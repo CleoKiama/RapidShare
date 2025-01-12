@@ -2,7 +2,7 @@ import React from "react";
 import { render, act } from "@testing-library/react";
 import { EventEmitter } from "node:events";
 import App from "../app.jsx";
-import os from "os";
+import os from "node:os";
 
 test("renders the TransferFileProgress component on startTransfer", async () => {
 	const transferMonitor = new EventEmitter();
@@ -29,6 +29,7 @@ test("renders the TransferFileProgress component on startTransfer", async () => 
 	const payload = {
 		started: true,
 		deviceName: deviceName,
+		status: "sending",
 	};
 	await act(async () => {
 		transferMonitor.emit(
@@ -70,6 +71,7 @@ test("reverts  back the ui once the the transfer of files is done", async () => 
 	let payload = {
 		started: true,
 		deviceName: "thisDevice",
+		status: "receiving",
 	};
 
 	await act(async () => {
@@ -82,13 +84,14 @@ test("reverts  back the ui once the the transfer of files is done", async () => 
 		);
 	});
 
-	const statusMessage = await findByText(/sending files/, {
+	const statusMessage = await findByText(/receiving files/, {
 		timeout: 800,
 	});
 	expect(statusMessage).toBeInTheDocument();
 	payload = {
 		started: false,
 		deviceName: "thisDevice",
+		status: "receiving",
 	};
 	await act(async () => {
 		transferMonitor.emit(

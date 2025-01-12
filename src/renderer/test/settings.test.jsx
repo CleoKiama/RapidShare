@@ -1,8 +1,8 @@
 import React from "react";
-import EventEmitter from "events";
+import EventEmitter from "node:events";
 import App from "../app.jsx";
 import { act, render } from "@testing-library/react";
-import os from "os";
+import os from "node:os";
 
 test("changes to the transfer ui when a transfer request comes in", async () => {
 	const transferMonitor = new EventEmitter();
@@ -32,7 +32,8 @@ test("changes to the transfer ui when a transfer request comes in", async () => 
 			},
 			{
 				started: true,
-				sendingTo: "PcTwo",
+				deviceName: "PcTwo",
+				status: "sending",
 			},
 		);
 	});

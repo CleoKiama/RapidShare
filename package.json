@@ -68,6 +68,7 @@
     "@radix-ui/react-dialog": "^1.0.5",
     "bonjour": "^3.5.0",
     "clsx": "^2.1.0",
+    "dotenv": "^16.4.5",
     "electron-squirrel-startup": "^1.0.0",
     "electron-store": "^9.0.0",
     "fast-folder-size": "^2.2.0",

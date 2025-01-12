@@ -16,7 +16,7 @@ export default async function startSend(filePaths, addressToMatch) {
 	};
 	ipcMain.handle("cancelTransfer", handleCancel);
 	try {
-		updateUi.onTransferStart(username);
+		updateUi.onTransferStart(username, "sending");
 		//prevent other connections while sending files
 		TransferServer.removeConnectionListener();
 		await transferFiles(filePaths, port, address, controller);

@@ -5,7 +5,7 @@ import PropTypes from "prop-types";
 import TransferProgressCanceled from "./transferProgressCanceled.jsx";
 import TransferProgressError from "./transferProgressError.jsx";
 
-export default function TransferProgress({ onNavigateBack, sendingTo }) {
+export default function TransferProgress(props) {
 	const [isCanceled, setIsCanceled] = useState(false);
 	const [error, setError] = useState(false);
 	const [progress, setProgress] = useState({
@@ -51,25 +51,32 @@ export default function TransferProgress({ onNavigateBack, sendingTo }) {
 		setIsCanceled(true);
 	};
 
-	//TODO Get the actual DeviceName
+	//TODO: Get the actual DeviceName
 	if (error) {
 		return (
 			<TransferProgressError
-				onNavigateBack={onNavigateBack}
+				onNavigateBack={props.onNavigateBack}
 				progress={progress}
 			/>
 		);
 	}
+	const transferMessage = {
+		sending: "sending files to",
+		receiving: "receiving files from",
+	};
 	return (
 		<>
 			{isCanceled ? (
 				<TransferProgressCanceled
-					onNavigateBack={onNavigateBack}
+					onNavigateBack={props.onNavigateBack}
 					progress={progress}
 				/>
 			) : (
 				<div>
-					<h5>sending files to {sendingTo}</h5>
+					<h5>
+						{transferMessage[props.transferStatus.status]}{" "}
+						{props.transferStatus.deviceName}
+					</h5>
 					<p className="text-gray-700">{progress.bytesTransferred} </p>
 					<Line
 						strokeColor="blue"
@@ -86,5 +93,8 @@ export default function TransferProgress({ onNavigateBack, sendingTo }) {
 
 TransferProgress.propTypes = {
 	onNavigateBack: PropTypes.func.isRequired,
-	sendingTo: PropTypes.string.isRequired,
+	transferStatus: PropTypes.shape({
+		deviceName: PropTypes.string,
+		status: PropTypes.string,
+	}),
 };

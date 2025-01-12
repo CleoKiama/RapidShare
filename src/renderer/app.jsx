@@ -9,13 +9,19 @@ import TransferProgress from "./components/transferProgress.jsx";
 import Settings from "./components/settings.jsx";
 
 export default function App() {
-	const [transferStart, setTransferStart] = useState(false);
-	const [sendingTo, setSendingTo] = useState("");
+	const [transferStatus, setTransferStatus] = useState({
+		started: false,
+		deviceName: "",
+		status: "",
+	});
 	const [navState, setNavState] = useState("devices");
 	useEffect(() => {
-		const listener = (_, { started, deviceName }) => {
-			setTransferStart(started);
-			setSendingTo(deviceName);
+		const listener = (_, { started, deviceName, status }) => {
+			setTransferStatus({
+				started,
+				deviceName,
+				status,
+			});
 		};
 		window.electron.on("transferring", listener);
 		return () => {
@@ -23,7 +29,7 @@ export default function App() {
 		};
 	}, []);
 	const HandleNavigationBack = () => {
-		setTransferStart(false);
+		setTransferStatus(false);
 	};
 	const updateNav = (nav) => {
 		setNavState(nav);
@@ -33,15 +39,18 @@ export default function App() {
 			<main className="mx-auto h-screen  min-w-[474px]  rounded-2xl bg-grey-200 px-6 py-4">
 				<h1 className="pl-4 font-semibold text-xl pb-1">RapidShare</h1>
 				<Container>
-					{!transferStart && (
+					{!transferStatus.started && (
 						<Nav navState={navState} onNavUpdate={updateNav} />
 					)}
 					{navState === "devices" ? (
 						<div className="pl-4">
-							{transferStart ? (
+							{transferStatus.started ? (
 								<TransferProgress
 									onNavigateBack={HandleNavigationBack}
-									sendingTo={sendingTo}
+									transferStatus={{
+										deviceName: transferStatus.deviceName,
+										status: transferStatus.status,
+									}}
 								/>
 							) : (
 								<div>
@@ -51,7 +60,7 @@ export default function App() {
 							)}
 						</div>
 					) : (
-						!transferStart && <Settings />
+						!transferStatus.started && <Settings />
 					)}
 				</Container>
 			</main>
