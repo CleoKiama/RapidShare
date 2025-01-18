@@ -1,6 +1,7 @@
 # RapidShare
 
 A lightweight, secure desktop application for rapid peer-to-peer file sharing over local networks. Built with Electron.
+![RapidShare Screenshot](./assets/250118_13h03m09s_screenshot.png)
 
 ## Features
 
@@ -91,4 +92,3 @@ Contributions are welcome!
 ## Support
 
 - Submit issues through the GitHub issue tracker
-

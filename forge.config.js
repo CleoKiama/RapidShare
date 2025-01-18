@@ -1,6 +1,8 @@
+require("dotenv").config();
 const { FusesPlugin } = require("@electron-forge/plugin-fuses");
 const { FuseV1Options, FuseVersion } = require("@electron/fuses");
 
+console.log("GitHub Token exists:", !!process.env.GITHUB_TOKEN);
 module.exports = {
 	packagerConfig: {
 		asar: true,
@@ -27,35 +29,30 @@ module.exports = {
 			name: "@electron-forge/maker-squirrel",
 			config: {},
 		},
-		{
-			name: "@electron-forge/maker-flatpak",
-			config: {
-				options: {
-					categories: ["Network", "FileTransfer"],
-					mimeType: ["video/h264"],
-				},
-			},
-		},
+		//{
+		//	name: "@electron-forge/maker-flatpak",
+		//	config: {
+		//		options: {
+		//			categories: ["Network", "FileTransfer"],
+		//			mimeType: ["video/h264"],
+		//			runtime: "org.freedesktop.Platform",
+		//			runtimeVersion: "23.08",
+		//			sdk: "org.freedesktop.Sdk",
+		//			base: "org.electronjs.Electron2.BaseApp",
+		//			baseVersion: "23.08",
+		//			finishArgs: [
+		//				"--share=network",
+		//				"--share=ipc",
+		//				"--socket=x11",
+		//				"--socket=wayland",
+		//				"--filesystem=home",
+		//			],
+		//		},
+		//	},
+		//},
 		{
 			name: "@electron-forge/maker-zip",
 			platforms: ["darwin", "linux"],
-		},
-		{
-			name: "@electron-forge/maker-deb",
-			config: {
-				options: {
-					maintainer: "Cleo Kiama",
-					homepage: "https://github.com/CleoKiama/RapidShare",
-				},
-			},
-		},
-		{
-			name: "@electron-forge/maker-rpm",
-			config: {
-				options: {
-					homepage: "https://github.com/CleoKiama/RapidShare",
-				},
-			},
 		},
 	],
 	plugins: [

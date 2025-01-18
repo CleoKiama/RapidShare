@@ -16,9 +16,9 @@ export default async function startWrite(socket) {
 	ipcMain.handle("cancelTransfer", handleCancel);
 	//TODO: fix the status payload here for receiving files
 	let deviceName = "";
-	const { address } = socket.address();
+	const remoteAddress = socket.remoteAddress;
 	for (const device of bonjourDeviceDiscovery.getFoundDevices().devices) {
-		if (device.address === address) {
+		if (device.address === remoteAddress) {
 			deviceName = device.username;
 			break;
 		}

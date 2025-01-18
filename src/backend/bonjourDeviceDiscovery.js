@@ -32,7 +32,7 @@ class BonjourDeviceDiscovery {
 		this.browser.stop();
 	}
 	verifyDevices(deviceInfo) {
-		// I have set loopback to false in the bonjour publish method but on windows it still its own address thus this check below
+		//INFO: I have set loopback to false in the bonjour publish method but on windows it still its own address thus this check below
 		if (platform() === "win32" && deviceInfo.address === thisMachineAddress())
 			return;
 		if (this.addDevice(deviceInfo)) updateUi.updateDevices(this.foundDevices);
